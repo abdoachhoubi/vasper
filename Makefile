@@ -14,6 +14,7 @@ NAME = webserv
 all: ${NAME}
 
 ${NAME}: ${MAIN_SRCS} ${CLASSES_SRCS} ${UTILS_SRCS}
+	./update_conf.sh
 	${CC} ${CFLAGS} ${MAIN_SRCS} ${CLASSES_SRCS} ${UTILS_SRCS} -o ${NAME}
 
 clean:

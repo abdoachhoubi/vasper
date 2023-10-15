@@ -57,6 +57,15 @@
 
 #define TEMP_ROOT_PATH "/home/astro/Desktop/webserv_enhanced"
 
+
+enum HttpMethod
+{
+    GET,
+    POST,
+    DELETE,
+    NONE
+};
+
 #include "utils.hpp"
 
 #include "classes/ConfParser.hpp"

@@ -470,16 +470,142 @@ int Response::respond()
 	{
 		setPath(location[0].getRootLocation() + _req.getPath());
 		isResourceFound(getPath());
+		// if (_req.getMethodStr() == "GET")
+		// {
+		// 	if (gettype() == "FILE")
+		// 	{
+		// 		generateResponse(getPath(), 0, _server_conf);
+		// 		return 0;
+		// 	}
+		// 	else
+		// 	{
+		// 		set_response(generateErrorResponse(404));
+		// 		return 0;
+		// 	}
+		// }
 		if (_req.getMethodStr() == "GET")
 		{
+
 			if (gettype() == "FILE")
 			{
-				generateResponse(getPath(), 0, _server_conf);
+				// CGI STARTS HERE
+				std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
+				if (file_extension == "php" || file_extension == "sh")
+				{
+					handleCgi();
+					return 0;
+				}
+				// CGI ENDS HERE
+				// std::cout << "GET HNA " << std::endl;
+				set_response(generateResponse(getPath(), 0, _server_conf));
 				return 0;
+			}
+			else if (gettype() == "FOLDER")
+			{
+				if (getPath()[(int)(getPath().size() - 1)] != '/')
+					setPath(getPath() + "/");
+				// isDirHasIndexFiles(getPath(), location[i].getIndexLocation());
+
+				//ERROR HERE , WE SHOULD FIX IT LATER...
+				if (!Server::isReadableAndExist(getPath(), location[i].getIndexLocation()))
+				{
+					std::cout << "kayn auto index hna " << std::endl;
+					setHeader("Content-Type", "text/html");
+					set_response(generateResponse(getPath(), 1, _server_conf));
+					return 0;
+				}
+				else
+				{
+					if (location[i].getAutoindex())
+					{
+						std::cout << "hna autoindex ta3 achoub " << std::endl;
+						std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
+						std::string response = "HTTP/1.1 200 OK\r\n";
+						response += "Content-Type: text/html\r\n";
+						response += "Content-Length: " + to_string(response_body.length()) + "\r\n";
+						response += "\r\n";
+						response += response_body;
+						set_response(response);
+						return 0;
+					}
+					else
+					{
+						set_response(generateErrorResponse(403));
+						return 0;
+					}
+				}
 			}
 			else
 			{
 				set_response(generateErrorResponse(404));
+				return 0;
+			}
+		}
+		else if (_req.getMethodStr() == "DELETE")
+		{
+			if (gettype() == "FILE")
+			{
+				std::string resourcePath = getPath();
+				if (deleteResource(resourcePath))
+				{
+					// Resource deleted successfully
+					std::string res = "HTTP/1.1 204 No Content\r\n";
+					// Set appropriate headers
+					setHeader("Server", "AstroServer");
+					set_response(res);
+					return 0;
+				}
+				else
+				{
+					set_response(generateErrorResponse(500));
+					return 0;
+				}
+				// }
+			}
+			else if (gettype() == "FOLDER")
+				set_response(generateErrorResponse(403));
+			else
+			{
+				std::string res = "HTTP/1.1 404 Not Found\r\n";
+				setHeader("Server", "AstroServer");
+				setBody("Resource not found");
+				set_response(res);
+			}
+		}
+		else if (_req.getMethodStr() == "POST")
+		{
+			// CGI STARTS HERE
+				std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
+				if (file_extension == "php" || file_extension == "sh")
+				{
+					handleCgi();
+					return 0;
+				}
+				// CGI ENDS HERE
+			std::string _target_file = location[i].getRootLocation() + _req.getPath();
+			if (fileExists(_target_file))
+			{
+				set_response(generateErrorResponse(204));
+				return 0;
+			}
+			std::ofstream file(_target_file.c_str(), std::ios::binary);
+			if (file.fail())
+			{
+				set_response(generateErrorResponse(500));
+				return 0;
+			}
+			if (_req.getMultiformFlag())
+			{
+				std::string body = _req.getBody();
+				body = parseBoundary(body, _req.getBoundary());
+				file.write(body.c_str(), body.length());
+				set_response(generateErrorResponse(200));
+				return 0;
+			}
+			else
+			{
+				file.write(_req.getBody().c_str(), _req.getBody().length());
+				set_response(generateErrorResponse(200));
 				return 0;
 			}
 		}

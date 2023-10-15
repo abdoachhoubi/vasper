@@ -2,14 +2,6 @@
 
 #include "../main.hpp"
 
-enum HttpMethod
-{
-    GET,
-    POST,
-    DELETE,
-    NONE
-};
-
 enum ParsingState
 {
     Request_Line,

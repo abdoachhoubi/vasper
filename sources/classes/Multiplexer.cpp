@@ -77,7 +77,13 @@ void Multiplexer::runServers()
         {
             std::cout << GREEN_BOLD << "the i is : " << i << RESET << std::endl;
             if (FD_ISSET(i, &_write_temp))
-                sendResponse(i, _clients_map[i]);
+            {
+				if (_clients_map[i].request.getMethod() == GET)
+					sendResponse(i, _clients_map[i]);
+				else
+					sendAstro(i, _clients_map[i]);
+				
+			}
             else if (FD_ISSET(i, &_recv_temp))
             {
                 if (_servers_map.count(i))
@@ -191,21 +197,61 @@ void    Multiplexer::sendResponse(const int &i, Client &client)
     }
 }
 
-void    Multiplexer::assignServer(Client &client)
+void    Multiplexer::sendAstro(const int &i, Client &client)
 {
-    for (std::vector<Server>::iterator it = _servers.begin();
-        it != _servers.end(); ++it)
+    int bytes_sent;
+    std::string response = client.response.get_response();
+    // std::cout << "the response is :" << response << std::endl;
+
+    if (response.length() >= BUFFER_SIZE)
+        bytes_sent = write(i, response.c_str(), BUFFER_SIZE);
+    else
+        bytes_sent = write(i, response.c_str(), response.length());
+
+    if (bytes_sent < 0)
     {
-        if (client.server.getHost() == it->getHost() &&
-            client.server.getPort() == it->getPort() &&
-            client.request.getServerName() == it->getServerName())
+        // Logger::logMsg(RED, CONSOLE_OUTPUT, "sendResponse(): error sending : %s", strerror(errno));
+        closeConnection(i);
+    }
+    else if (bytes_sent == 0 || (size_t) bytes_sent == response.length())
+    {
+        // Logger::logMsg(LIGHTMAGENTA, CONSOLE_OUTPUT, "sendResponse() Done sending ");
+        // Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Response Sent To Socket %d, Stats=<%d>"
+        // , i, client.response.getStatusCode());
+        if (client.request.keepAlive() == false || client.request.errorCode())
         {
-            client.setServer(*it);
-			client.response.setServer(*it);
-            return ;
+            // Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d: Connection Closed.", i);
+            closeConnection(i);
+        }
+        else
+        {
+            removeFromSet(i, _write_fds);
+            addToSet(i, _recv_fds);
+            client.clearClient();
         }
     }
+    else
+    {
+        client.updateTime();
+        client.response.cut_response(bytes_sent);
+    }
 }
+
+// void    Multiplexer::assignServer(Client &client)
+// {
+//     for (std::vector<Server>::iterator it = _servers.begin();
+//         it != _servers.end(); ++it)
+//     {
+//         if (client.server.getHost() == it->getHost() &&
+//             client.server.getPort() == it->getPort() &&
+//             client.request.getServerName() == it->getServerName())
+//         {
+//             client.setServer(*it);
+// 			client.response.setServer(*it);
+//             return ;
+//         }
+//     }
+// }
 
 void    Multiplexer::acceptNewConnection(Server &serv)
 {
