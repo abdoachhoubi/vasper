@@ -3,7 +3,6 @@
 // Constructors
 Response::Response(Request &req, Server server) : _req(req), _server_conf(server)
 {
-
 	contentType = getContentTypeFromExtension(req.getPath());
 	// _autoindex = false;
 };
@@ -192,9 +191,7 @@ bool Response::deleteResource(const std::string &resourcePath)
 	{
 		// Attempt to delete the resource
 		if (remove(resourcePath.c_str()) == 0)
-		{
 			return true;
-		}
 	}
 	return false;
 }
@@ -210,9 +207,7 @@ void Response::SaveDataToFile(const std::string &filePath, const std::string &da
 {
 	std::ofstream file(filePath.c_str(), std::ios::binary);
 	if (!file.is_open())
-	{
 		return;
-	}
 	file << data;
 	file.close();
 }
@@ -221,9 +216,7 @@ void Response::AppendDataToFile(const std::string &filePath, const std::string &
 {
 	std::ofstream file(filePath.c_str(), std::ios::binary | std::ios::app);
 	if (!file.is_open())
-	{
 		return;
-	}
 	file << data;
 	file.close();
 }
@@ -470,19 +463,6 @@ int Response::respond()
 	{
 		setPath(location[0].getRootLocation() + _req.getPath());
 		isResourceFound(getPath());
-		// if (_req.getMethodStr() == "GET")
-		// {
-		// 	if (gettype() == "FILE")
-		// 	{
-		// 		generateResponse(getPath(), 0, _server_conf);
-		// 		return 0;
-		// 	}
-		// 	else
-		// 	{
-		// 		set_response(generateErrorResponse(404));
-		// 		return 0;
-		// 	}
-		// }
 		if (_req.getMethodStr() == "GET")
 		{
 
@@ -496,20 +476,17 @@ int Response::respond()
 					return 0;
 				}
 				// CGI ENDS HERE
-				// std::cout << "GET HNA " << std::endl;
-				set_response(generateResponse(getPath(), 0, _server_conf));
+				generateResponse(getPath(), 0, _server_conf);
 				return 0;
 			}
 			else if (gettype() == "FOLDER")
 			{
 				if (getPath()[(int)(getPath().size() - 1)] != '/')
 					setPath(getPath() + "/");
-				// isDirHasIndexFiles(getPath(), location[i].getIndexLocation());
 
 				//ERROR HERE , WE SHOULD FIX IT LATER...
 				if (!Server::isReadableAndExist(getPath(), location[i].getIndexLocation()))
 				{
-					std::cout << "kayn auto index hna " << std::endl;
 					setHeader("Content-Type", "text/html");
 					set_response(generateResponse(getPath(), 1, _server_conf));
 					return 0;
@@ -550,7 +527,6 @@ int Response::respond()
 				{
 					// Resource deleted successfully
 					std::string res = "HTTP/1.1 204 No Content\r\n";
-					// Set appropriate headers
 					setHeader("Server", "AstroServer");
 					set_response(res);
 					return 0;
@@ -560,7 +536,6 @@ int Response::respond()
 					set_response(generateErrorResponse(500));
 					return 0;
 				}
-				// }
 			}
 			else if (gettype() == "FOLDER")
 				set_response(generateErrorResponse(403));

@@ -18,13 +18,11 @@ class Client
         const int					&getSocket() const;
         const struct sockaddr_in	&getAddress() const;
         const Request				&getRequest() const;
-        const time_t				&getLastTime() const;
 
         void                setSocket(int &);
         void                setAddress(sockaddr_in &);
         void                setServer(Server &);
         void                buildResponse();
-        void                updateTime();
         void                clearClient();
 
         Response            response;
@@ -39,10 +37,7 @@ class Client
         ssize_t      bytes_sent;
         bool        flag;
         bool     _rem;
-        std::string __name;
     private:
         int                 _client_socket;
         struct sockaddr_in  _client_address;
-        time_t              _last_msg_time;
-        // std::string             ppath;
 };

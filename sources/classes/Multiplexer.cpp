@@ -11,9 +11,8 @@ void Multiplexer::setupServers(std::vector<Server> servers)
     char buf[INET_ADDRSTRLEN];
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
     {
-        // std::cout << BLUE_BOLD << "CREATING SERVER ==> " << i++ << RESET << std::endl;
         it->setupServer();
-        std::cout << "Server Created: ServerName " << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << "Host " << it->getServerName().c_str() << "Port " << it->getPort() << std::endl;
+        std::cout <<  BLUE_BOLD << "Server Created: ServerName " << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << "Host " << it->getServerName().c_str() << "Port " << it->getPort() << RESET << std::endl;
     }
 }
 
@@ -71,11 +70,9 @@ void Multiplexer::runServers()
             std::cerr << "webserv: select error " << strerror(errno) << std::endl;
             continue;
         }
-        // std::cout << ORANGE_BOLD << "ana fl while lwlaa " << RESET << std::endl;
         int i = 2;
         while (i <= fdmax)
         {
-            std::cout << GREEN_BOLD << "the i is : " << i << RESET << std::endl;
             if (FD_ISSET(i, &_write_temp))
             {
 				if (_clients_map[i].request.getMethod() == GET)
@@ -133,75 +130,64 @@ void    Multiplexer::readRequest(const int &i, Client &client)
   
 }
 
+void    Multiplexer::buildTheResponse(Client &client)
+{
+    if (client.isHeadSent == false)
+    {
+        client.flag = false;
+        std::string headers = client.response.get_headers();
+        client.response._response = headers;
+        client.content_len = client.response.fileSize;
+        client.isHeadSent = true;
+    }
+    else
+    {
+        char buffer[BUFFER_SIZE];
+        memset(buffer, 0, sizeof(buffer));
+        if (client.isFileOpened == false)
+        {
+            client.file.close();
+            client.file.open(client.response.getPath().c_str(), std::ios::in | std::ios::binary);
+            client.isFileOpened = true;
+        }
+        client.file.read(buffer, BUFFER_SIZE - 1);
+        client.bytesRead = client.file.gcount();
+        if (client.bytesRead < 0)
+            std::cerr << "ERROR HERE : IN READ BYTES " << std::endl;
+        client.response._response = std::string(buffer, client.bytesRead);
+    }
+}
+
+
 void    Multiplexer::sendResponse(const int &i, Client &client)
 {
     std::string response;
-    std::cout << WHITE_BOLD << "ana dkhalt l send response " << RESET << std::endl;
     if (client._rem ==  false)
-    {
-        if (client.isHeadSent == false)
-        {
-            client.flag = false;
-            std::string headers = client.response.get_headers();
-            client.response._response = headers;
-            client.content_len = client.response.fileSize;
-            client.isHeadSent = true;
-        }
-        else
-        {
-            std::cout << RED_BOLD << "settng the body " << RESET << std::endl;
-            char buffer[BUFFER_SIZE];
-            memset(buffer, 0, sizeof(buffer));
-            if (client.isFileOpened == false)
-            {
-                client.file.close();
-                client.file.open(client.response.getPath().c_str(), std::ios::in | std::ios::binary);
-                client.isFileOpened = true;
-            }
-            client.file.read(buffer, BUFFER_SIZE - 1);
-            client.bytesRead = client.file.gcount();
-            if (client.bytesRead < 0)
-            {
-                std::cerr << "ERROR HERE : IN READ BYTES " << std::endl;
-            }
-            client.response._response = std::string(buffer, client.bytesRead);
-        }
-    }
+        buildTheResponse(client);
     ssize_t result = write(i, client.response._response.c_str(), client.response._response.size());
-    std::cout << RED_BOLD << i << " send :  " << client.bytes_sent << "  ||  " << result << RESET  << std::endl;
     if (client.flag == true)
         client.bytes_sent += result;
 
     if (result == -1)
-    {
-        std::cout << BLUE_BOLD << "Probleme in send function " << strerror(errno) << std::endl;
         closeConnection(i);
-    }
     else if (result != (ssize_t)client.response._response.size())
     {
-        // std::cout << ORANGE_BOLD << "baqa chi haja f remaining " << RESET << std::endl;
         client._rem = true;
         client.response._response = client.response._response.substr(result,client.response._response.size()); 
     }
     else if (client.bytes_sent >= (ssize_t)client.content_len ||  client.response._response.empty())
-    {
-        std::cout << "the content length is : " << client.content_len << std::endl;
-        std::cout << "the bytes send  is : " << client.bytes_sent << std::endl;
-        std::cout << "the response is sent " << std::endl;
         closeConnection(i);
-    }
-    else
-    {
-        client._rem = false;
-        std::cout << "sendat gha chwiyaa  " << std::endl;
-    }
+    else 
+        client._rem = false; // send just a buffer size not all the response 
 }
+
+
+
 
 void    Multiplexer::sendAstro(const int &i, Client &client)
 {
     int bytes_sent;
     std::string response = client.response.get_response();
-    // std::cout << "the response is :" << response << std::endl;
 
     if (response.length() >= BUFFER_SIZE)
         bytes_sent = write(i, response.c_str(), BUFFER_SIZE);
@@ -209,32 +195,19 @@ void    Multiplexer::sendAstro(const int &i, Client &client)
         bytes_sent = write(i, response.c_str(), response.length());
 
     if (bytes_sent < 0)
-    {
-        // Logger::logMsg(RED, CONSOLE_OUTPUT, "sendResponse(): error sending : %s", strerror(errno));
         closeConnection(i);
-    }
     else if (bytes_sent == 0 || (size_t) bytes_sent == response.length())
     {
-        // Logger::logMsg(LIGHTMAGENTA, CONSOLE_OUTPUT, "sendResponse() Done sending ");
-        // Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Response Sent To Socket %d, Stats=<%d>"
-        // , i, client.response.getStatusCode());
         if (client.request.keepAlive() == false || client.request.errorCode())
-        {
-            // Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d: Connection Closed.", i);
             closeConnection(i);
-        }
         else
         {
             removeFromSet(i, _write_fds);
             addToSet(i, _recv_fds);
-            client.clearClient();
         }
     }
     else
-    {
-        client.updateTime();
         client.response.cut_response(bytes_sent);
-    }
 }
 
 // void    Multiplexer::assignServer(Client &client)

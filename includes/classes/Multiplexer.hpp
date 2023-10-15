@@ -23,7 +23,7 @@ class Multiplexer {
         // void    assignServer(Client &c);
         void    sendResponse(const int &i, Client &c);
 		void    sendAstro(const int &i, Client &client);
-        void    checkTimeout();
+        void    buildTheResponse(Client &client);
         
     private:
         std::vector<Server>		_servers;
