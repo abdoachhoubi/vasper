@@ -23,15 +23,15 @@ class Multiplexer {
         void    sendResponse(const int &i, Client &c);
 		void    sendAstro(const int &i, Client &client);
         void    buildTheResponse(Client &client);
-        
+        static fd_set					_recv_fds;
+        static fd_set					_write_fds;
+        static void    clear_set();
+        static int						fdmax;
     private:
         std::vector<Server>		_servers;
         std::map<int, Server>	_servers_map;
         std::map<int, Client>	_clients_map;
 
-        fd_set					_recv_fds;
-        fd_set					_write_fds;
-        int						fdmax;
         std::string             ppath;
         
 };

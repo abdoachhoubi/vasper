@@ -253,6 +253,7 @@ int Response::respond()
 {
 	_req.setPath(decodePath(_req.getPath()));
 	std::vector<Location> location = _server_conf.getLocations();
+	_check = true;
 	for (size_t i = 0; i < location.size(); ++i)
 	{
 		setPath(location[0].getRootLocation() + _req.getPath());
@@ -270,6 +271,7 @@ int Response::respond()
 				}
 				// CGI ENDS HERE
 				generateResponse(getPath(), 0, _server_conf);
+				_check = false;
 				return 0;
 			}
 			else if (gettype() == "FOLDER")
@@ -280,14 +282,15 @@ int Response::respond()
 				//ERROR HERE , WE SHOULD FIX IT LATER...
 				if (!Server::isReadableAndExist(getPath(), location[i].getIndexLocation()))
 				{
-					setHeader("Content-Type", "text/html");
 					set_response(generateResponse(getPath(), 1, _server_conf));
 					return 0;
 				}
 				else
 				{
+					
 					if (location[i].getAutoindex())
 					{
+						std::cout << "dkhal lhad else " << std::endl;
 						std::cout << "hna autoindex ta3 achoub " << std::endl;
 						std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
 						std::string response = "HTTP/1.1 200 OK\r\n";
@@ -295,6 +298,7 @@ int Response::respond()
 						response += "Content-Length: " + to_string(response_body.length()) + "\r\n";
 						response += "\r\n";
 						response += response_body;
+						// std::cout << BLUE_BOLD << response << RESET << std::endl;
 						set_response(response);
 						return 0;
 					}

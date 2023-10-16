@@ -10,13 +10,8 @@ void    usage()
 void signalHandler(int signal)
 {
    if (signal == SIGINT || signal == SIGTSTP)
-   {
-    	// should close all the read files and send files 
-		std::exit(0);
-   }
+	  	exit(0);
 }
-
-#include <csignal>
 
 int main(int ac, char **av)
 {

@@ -16,6 +16,7 @@
 # include <climits>
 # include <ctime>
 # include <cstdarg>
+#include <csignal>
 
 /* STL Containers */
 # include <map>

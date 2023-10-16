@@ -57,7 +57,7 @@ class Response {
 		std::string _response;
 		std::streampos fileSize;
 		size_t content_len;
-
+		bool _check;
 	private:
 		Request		_req;
 		Server	_server_conf;

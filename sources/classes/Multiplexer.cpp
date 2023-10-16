@@ -1,7 +1,6 @@
 #include "../../includes/main.hpp"
 
 Multiplexer::Multiplexer() {}
-
 Multiplexer::~Multiplexer() {}
 
 void Multiplexer::setupServers(std::vector<Server> servers)
@@ -63,7 +62,7 @@ void Multiplexer::runServers()
         {
             if (FD_ISSET(i, &_write_temp))
             {
-				if (_clients_map[i].request.getMethod() == GET)
+				if (_clients_map[i].request.getMethod() == GET && _clients_map[i].response._check == false)
 					sendResponse(i, _clients_map[i]);
 				else
 					sendAstro(i, _clients_map[i]);
@@ -113,8 +112,6 @@ void    Multiplexer::readRequest(const int &i, Client &client)
             addToSet(i, _write_fds);
         }
     }
-
-  
 }
 
 void    Multiplexer::buildTheResponse(Client &client)
@@ -167,9 +164,6 @@ void    Multiplexer::sendResponse(const int &i, Client &client)
     else 
         client._rem = false; // send just a buffer size not all the response 
 }
-
-
-
 
 void    Multiplexer::sendAstro(const int &i, Client &client)
 {
