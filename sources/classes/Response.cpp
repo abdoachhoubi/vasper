@@ -50,7 +50,7 @@ std::string Response::generateResponse(std::string fullPath, int flag, Server se
 	if (!file)
 	{
 		std::cout << "error in opening the file " << std::endl;
-		set_response(generateErrorResponse(500));
+		set_headers(generateErrorResponse(500));
 		return get_response();
 	}
 	_path = fullPath;
@@ -282,7 +282,7 @@ int Response::respond()
 				//ERROR HERE , WE SHOULD FIX IT LATER...
 				if (!Server::isReadableAndExist(getPath(), location[i].getIndexLocation()))
 				{
-					set_response(generateResponse(getPath(), 1, _server_conf));
+					set_headers(generateResponse(getPath(), 1, _server_conf));
 					return 0;
 				}
 				else
@@ -299,19 +299,19 @@ int Response::respond()
 						response += "\r\n";
 						response += response_body;
 						// std::cout << BLUE_BOLD << response << RESET << std::endl;
-						set_response(response);
+						set_headers(response);
 						return 0;
 					}
 					else
 					{
-						set_response(generateErrorResponse(403));
+						set_headers(generateErrorResponse(403));
 						return 0;
 					}
 				}
 			}
 			else
 			{
-				set_response(generateErrorResponse(404));
+				set_headers(generateErrorResponse(404));
 				return 0;
 			}
 		}
@@ -325,23 +325,23 @@ int Response::respond()
 					// Resource deleted successfully
 					std::string res = "HTTP/1.1 204 No Content\r\n";
 					setHeader("Server", "AstroServer");
-					set_response(res);
+					set_headers(res);
 					return 0;
 				}
 				else
 				{
-					set_response(generateErrorResponse(500));
+					set_headers(generateErrorResponse(500));
 					return 0;
 				}
 			}
 			else if (gettype() == "FOLDER")
-				set_response(generateErrorResponse(403));
+				set_headers(generateErrorResponse(403));
 			else
 			{
 				std::string res = "HTTP/1.1 404 Not Found\r\n";
 				setHeader("Server", "AstroServer");
 				setBody("Resource not found");
-				set_response(res);
+				set_headers(res);
 			}
 		}
 		else if (_req.getMethodStr() == "POST")
@@ -357,13 +357,13 @@ int Response::respond()
 			std::string _target_file = location[i].getRootLocation() + _req.getPath();
 			if (fileExists(_target_file))
 			{
-				set_response(generateErrorResponse(204));
+				set_headers(generateErrorResponse(204));
 				return 0;
 			}
 			std::ofstream file(_target_file.c_str(), std::ios::binary);
 			if (file.fail())
 			{
-				set_response(generateErrorResponse(500));
+				set_headers(generateErrorResponse(500));
 				return 0;
 			}
 			if (_req.getMultiformFlag())
@@ -371,18 +371,18 @@ int Response::respond()
 				std::string body = _req.getBody();
 				body = parseBoundary(body, _req.getBoundary());
 				file.write(body.c_str(), body.length());
-				set_response(generateErrorResponse(200));
+				set_headers(generateErrorResponse(200));
 				return 0;
 			}
 			else
 			{
 				file.write(_req.getBody().c_str(), _req.getBody().length());
-				set_response(generateErrorResponse(200));
+				set_headers(generateErrorResponse(200));
 				return 0;
 			}
 		}
 	}
-	set_response(generateErrorResponse(405));
+	set_headers(generateErrorResponse(405));
 	return 0;
 }
 
@@ -439,7 +439,7 @@ int        Response::handleCgi()
 	// STEP 4: GET CGI RESPONSE
 	std::string cgi_response = cgi.getCgiResponse();
 	// STEP 5: SET RESPONSE
-	set_response(cgi_response);
+	set_headers(cgi_response);
 	return 0;
 }
 

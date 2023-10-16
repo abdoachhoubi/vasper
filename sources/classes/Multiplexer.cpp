@@ -62,10 +62,10 @@ void Multiplexer::runServers()
         {
             if (FD_ISSET(i, &_write_temp))
             {
-				if (_clients_map[i].request.getMethod() == GET && _clients_map[i].response._check == false)
+				// if (_clients_map[i].request.getMethod() == GET && _clients_map[i].response._check == false)
 					sendResponse(i, _clients_map[i]);
-				else
-					sendAstro(i, _clients_map[i]);
+				// else
+					// sendAstro(i, _clients_map[i]);
 			}
             else if (FD_ISSET(i, &_recv_temp))
             {
