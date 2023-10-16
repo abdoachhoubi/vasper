@@ -6,7 +6,7 @@ Multiplexer::~Multiplexer() {}
 
 void Multiplexer::setupServers(std::vector<Server> servers)
 {
-    std::cout << "Creating Servers" << std::endl;
+    std::cout << RED_BOLD << "Creating Servers" << RESET << std::endl;
     _servers = servers;
     char buf[INET_ADDRSTRLEN];
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
@@ -23,18 +23,6 @@ void Multiplexer::init_fds()
 
     for (size_t i = 0; i < _servers.size();i++)
     {
-        if (listen(_servers[i].getFd(), SOMAXCONN) == -1)
-        {
-            std::cerr << "webserv: listen error: " << strerror(errno) << std::endl;
-            close(_servers[i].getFd());
-            continue;
-        }
-        if (fcntl(_servers[i].getFd(), F_SETFL, O_NONBLOCK) < 0)
-        {
-            std::cerr << "webserv: fcntl error: " << strerror(errno) << std::endl;
-            close(_servers[i].getFd());
-            continue; 
-        }
         addToSet(_servers[i].getFd(), _recv_fds);
         _servers_map[_servers[i].getFd()] = _servers[i];
     }
@@ -79,7 +67,6 @@ void Multiplexer::runServers()
 					sendResponse(i, _clients_map[i]);
 				else
 					sendAstro(i, _clients_map[i]);
-				
 			}
             else if (FD_ISSET(i, &_recv_temp))
             {
@@ -210,29 +197,12 @@ void    Multiplexer::sendAstro(const int &i, Client &client)
         client.response.cut_response(bytes_sent);
 }
 
-// void    Multiplexer::assignServer(Client &client)
-// {
-//     for (std::vector<Server>::iterator it = _servers.begin();
-//         it != _servers.end(); ++it)
-//     {
-//         if (client.server.getHost() == it->getHost() &&
-//             client.server.getPort() == it->getPort() &&
-//             client.request.getServerName() == it->getServerName())
-//         {
-//             client.setServer(*it);
-// 			client.response.setServer(*it);
-//             return ;
-//         }
-//     }
-// }
-
 void    Multiplexer::acceptNewConnection(Server &serv)
 {
     struct sockaddr_in client_address;
     long  client_address_size = sizeof(client_address);
     int client_sock;
     Client  new_client(serv);
-    // std::cout << CYAN_BOLD << "ana f accept function  " << RESET << std::endl; 
     char    buf[INET_ADDRSTRLEN];
 
     if ( (client_sock = accept(serv.getFd(), (struct sockaddr *)&client_address,
@@ -242,9 +212,7 @@ void    Multiplexer::acceptNewConnection(Server &serv)
         return ;
     }
     std::cout << YELLOW_BOLD << "New Connection From " << inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN) << "Assigned Socket " << client_sock << RESET << std::endl;
-
     addToSet(client_sock, _recv_fds);
-
     if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
     {
         std::cerr << "webserv: fcntl error " << strerror(errno) << std::endl;

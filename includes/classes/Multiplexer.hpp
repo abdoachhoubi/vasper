@@ -20,7 +20,6 @@ class Multiplexer {
 
         void    readRequest(const int &i, Client &c);
         void    closeConnection(const int i);
-        // void    assignServer(Client &c);
         void    sendResponse(const int &i, Client &c);
 		void    sendAstro(const int &i, Client &client);
         void    buildTheResponse(Client &client);

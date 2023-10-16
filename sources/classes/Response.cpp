@@ -1,26 +1,29 @@
 #include "../../includes/main.hpp"
 
 // Constructors
-Response::Response(Request &req, Server server) : _req(req), _server_conf(server)
-{
-	contentType = getContentTypeFromExtension(req.getPath());
-	// _autoindex = false;
-};
 
 Response::Response() {};
+Response::Response(Request &req, Server server) : _req(req), _server_conf(server) {contentType = getContentTypeFromExtension(req.getPath());}
+void 		Response::setServer(Server server) { _server_conf = server; }
+void		Response::setRequest(Request req) { _req = req; }
+int 		Response::getStatusCode() const {return statusCode;}
+const 		std::string &Response::getStatusText() const {return statusText;}
+const 		std::string &Response::getBody() const {return body;}
+void 		Response::set_headers(std::string headers) {_headers = headers;}
+void 		Response::set_response(std::string response) { this->_response = response; }
+void 		Response::setPath(std::string path) {this->_path = path;}
+void 		Response::settype(std::string type) {this->_type = type;}
+void 		Response::setHeader(const std::string &key, const std::string &value) {headers[key] = value;}
+void 		Response::setBody(const std::string &body) {this->body = body;}
+void     	Response::setCgiState(int state) {_cgi_state = state;}
+void        Response::cut_response(size_t i) {_response = _response.substr(i);}
+std::string Response::getContentType() {return contentType;}
+std::string Response::gettype() {return this->_type;}
+std::string Response::get_response() {return this->_response;}
+std::string Response::getPath() {return this->_path;}
+std::string Response::get_headers() {return (_headers);}
 
-// set server
-void Response::setServer(Server server)
-{
-	_server_conf = server;
-}
 
-void	Response::setRequest(Request req)
-{
-	_req = req;
-}
-
-// Check if the resource is found or not
 std::string Response::isResourceFound(const std::string &fullPath)
 {
 	struct stat fileStat;
@@ -36,7 +39,6 @@ std::string Response::isResourceFound(const std::string &fullPath)
 	return (gettype());
 }
 
-// Generate a response for a given resource
 std::string Response::generateResponse(std::string fullPath, int flag, Server server)
 {
 	if (flag == 1)
@@ -62,90 +64,20 @@ std::string Response::generateResponse(std::string fullPath, int flag, Server se
 	return this->toString();
 }
 
-
-// Setters and Getters
-void Response::set_response(std::string response)
-{
-	this->_response = response;
-}
-
-std::string Response::get_response()
-{
-	return this->_response;
-}
-
-void Response::setPath(std::string path)
-{
-	this->_path = path;
-}
-
-std::string Response::getPath()
-{
-	return this->_path;
-}
-
-void Response::settype(std::string type)
-{
-	this->_type = type;
-}
-
-std::string Response::gettype()
-{
-	return this->_type;
-}
-
-void Response::setHeader(const std::string &key, const std::string &value)
-{
-	headers[key] = value;
-}
-
 const std::string &Response::getHeader(const std::string &key) const
 {
 	std::map<std::string, std::string>::const_iterator it = headers.find(key);
 	if (it != headers.end())
-	{
 		return it->second;
-	}
 
 	static const std::string empty;
 	return empty;
-}
-
-void Response::setBody(const std::string &body)
-{
-	this->body = body;
 }
 
 void Response::setStatus(int statusCode, const std::string &statusText)
 {
 	this->statusCode = statusCode;
 	this->statusText = statusText;
-}
-
-int Response::getStatusCode() const
-{
-	return statusCode;
-}
-
-const std::string &Response::getStatusText() const
-{
-	return statusText;
-}
-
-const std::string &Response::getBody() const
-{
-	return body;
-}
-
-void Response::set_headers(std::string headers)
-{
-	_headers = headers;
-}
-
-
-std::string Response::get_headers()
-{
-	return (_headers);
 }
 
 std::string Response::toString()
@@ -160,10 +92,7 @@ std::string Response::toString()
 	return hedears;
 }
 
-std::string Response::getContentType()
-{
-	return contentType;
-}
+
 
 bool Response::isResourceDeletable(const std::string &resourcePath)
 {
@@ -175,9 +104,7 @@ bool Response::isResourceDeletable(const std::string &resourcePath)
 			if (fileStat.st_uid == getuid())
 			{
 				if (fileStat.st_mode & S_IWUSR)
-				{
 					return true;
-				}
 			}
 		}
 	}
@@ -321,6 +248,239 @@ std::string Response::decodePath(std::string path)
 	return decoded_path;
 }
 
+// Response main method (tkhari9a)
+int Response::respond()
+{
+	_req.setPath(decodePath(_req.getPath()));
+	std::vector<Location> location = _server_conf.getLocations();
+	for (size_t i = 0; i < location.size(); ++i)
+	{
+		setPath(location[0].getRootLocation() + _req.getPath());
+		isResourceFound(getPath());
+		if (_req.getMethodStr() == "GET")
+		{
+			if (gettype() == "FILE")
+			{
+				// CGI STARTS HERE
+				std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
+				if (file_extension == "php" || file_extension == "sh")
+				{
+					handleCgi();
+					return 0;
+				}
+				// CGI ENDS HERE
+				generateResponse(getPath(), 0, _server_conf);
+				return 0;
+			}
+			else if (gettype() == "FOLDER")
+			{
+				if (getPath()[(int)(getPath().size() - 1)] != '/')
+					setPath(getPath() + "/");
+
+				//ERROR HERE , WE SHOULD FIX IT LATER...
+				if (!Server::isReadableAndExist(getPath(), location[i].getIndexLocation()))
+				{
+					setHeader("Content-Type", "text/html");
+					set_response(generateResponse(getPath(), 1, _server_conf));
+					return 0;
+				}
+				else
+				{
+					if (location[i].getAutoindex())
+					{
+						std::cout << "hna autoindex ta3 achoub " << std::endl;
+						std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
+						std::string response = "HTTP/1.1 200 OK\r\n";
+						response += "Content-Type: text/html\r\n";
+						response += "Content-Length: " + to_string(response_body.length()) + "\r\n";
+						response += "\r\n";
+						response += response_body;
+						set_response(response);
+						return 0;
+					}
+					else
+					{
+						set_response(generateErrorResponse(403));
+						return 0;
+					}
+				}
+			}
+			else
+			{
+				set_response(generateErrorResponse(404));
+				return 0;
+			}
+		}
+		else if (_req.getMethodStr() == "DELETE")
+		{
+			if (gettype() == "FILE")
+			{
+				std::string resourcePath = getPath();
+				if (deleteResource(resourcePath))
+				{
+					// Resource deleted successfully
+					std::string res = "HTTP/1.1 204 No Content\r\n";
+					setHeader("Server", "AstroServer");
+					set_response(res);
+					return 0;
+				}
+				else
+				{
+					set_response(generateErrorResponse(500));
+					return 0;
+				}
+			}
+			else if (gettype() == "FOLDER")
+				set_response(generateErrorResponse(403));
+			else
+			{
+				std::string res = "HTTP/1.1 404 Not Found\r\n";
+				setHeader("Server", "AstroServer");
+				setBody("Resource not found");
+				set_response(res);
+			}
+		}
+		else if (_req.getMethodStr() == "POST")
+		{
+			// CGI STARTS HERE
+				std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
+				if (file_extension == "php" || file_extension == "sh")
+				{
+					handleCgi();
+					return 0;
+				}
+				// CGI ENDS HERE
+			std::string _target_file = location[i].getRootLocation() + _req.getPath();
+			if (fileExists(_target_file))
+			{
+				set_response(generateErrorResponse(204));
+				return 0;
+			}
+			std::ofstream file(_target_file.c_str(), std::ios::binary);
+			if (file.fail())
+			{
+				set_response(generateErrorResponse(500));
+				return 0;
+			}
+			if (_req.getMultiformFlag())
+			{
+				std::string body = _req.getBody();
+				body = parseBoundary(body, _req.getBoundary());
+				file.write(body.c_str(), body.length());
+				set_response(generateErrorResponse(200));
+				return 0;
+			}
+			else
+			{
+				file.write(_req.getBody().c_str(), _req.getBody().length());
+				set_response(generateErrorResponse(200));
+				return 0;
+			}
+		}
+	}
+	set_response(generateErrorResponse(405));
+	return 0;
+}
+
+// Helper function to generate a unique filename
+std::string Response::generateUniqueFilename()
+{
+	std::srand(static_cast<unsigned int>(std::time(NULL)));
+	std::stringstream ss;
+	ss << "/upload_" << std::rand() << ".dat";
+	return ss.str();
+}
+
+// Helper function to save data to a file
+bool Response::saveDataToFile(const std::string &filePath, const std::string &data)
+{
+	std::string	final_path = _server_conf.getRoot() + "/" + _server_conf.getUploadPath() + filePath;
+	std::cout << final_path << std::endl;
+	std::ofstream file(final_path.c_str(), std::ios::binary);
+	if (!file.is_open())
+	{
+		return false;
+	}
+	file << data;
+	file.close();
+	return true;
+}
+
+// Helper method to get the content type from the file extension
+
+
+// int Response::MethodNotAllowed(const Location &loc)
+// {
+// 	for (size_t j = 0; j < loc.methods.size(); ++j)
+// 	{
+
+// 		if (_req.getMethodStr() == loc.methods[j])
+// 			return 1;
+// 	}
+// 	return 0;
+// }
+
+// CGI 
+int        Response::handleCgi()
+{
+	std::cout << "Calling CGI" << std::endl;
+
+	short error_code;
+	// STEP 1: CREATE A CGI OBJECT
+	Cgi cgi(_server_conf.getRoot() + _req.getPath());
+	// STEP 2: INIT ENVIRONMENT VARIABLES
+	cgi.initEnv(_req);
+	// STEP 3: EXECUTE CGI
+	cgi.execute(error_code);
+	// STEP 4: GET CGI RESPONSE
+	std::string cgi_response = cgi.getCgiResponse();
+	// STEP 5: SET RESPONSE
+	set_response(cgi_response);
+	return 0;
+}
+
+
+
+std::string Response::getContentTypeFromExtension(const std::string &filePath)
+{
+	std::map<std::string, std::string> extensionToContentType;
+	extensionToContentType[".html"] = "text/html";
+	extensionToContentType[".htm"] = "text/html";
+	extensionToContentType[".css"] = "text/css";
+	extensionToContentType[".js"] = "application/javascript";
+	extensionToContentType[".jpg"] = "image/jpeg";
+	extensionToContentType[".png"] = "image/png";
+	extensionToContentType[".gif"] = "image/gif";
+	extensionToContentType[".svg"] = "image/svg+xml";
+	extensionToContentType[".pdf"] = "application/pdf";
+	extensionToContentType[".txt"] = "text/plain";
+	extensionToContentType[".zip"] = "application/zip";
+	extensionToContentType[".gz"] = "application/gzip";
+	extensionToContentType[".tar"] = "application/x-tar";
+	extensionToContentType[".xml"] = "application/xml";
+	extensionToContentType[".xhtml"] = "application/xhtml+xml";
+	extensionToContentType[".ico"] = "image/x-icon";
+	extensionToContentType[".avi"] = "video/x-msvideo";
+	extensionToContentType[".bmp"] = "image/bmp";
+	extensionToContentType[".doc"] = "application/msword";
+	extensionToContentType[".gz"] = "application/x-gzip";
+	extensionToContentType[".jpeg"] = "image/jpeg";
+	extensionToContentType[".mp3"] = "audio/mp3";
+	extensionToContentType[".mp4"] = "video/mp4";
+	extensionToContentType[".mpeg"] = "video/mpeg";
+	extensionToContentType[".pdf"] = "application/pdf";
+	extensionToContentType["default"] = "text/html";
+
+	size_t lastDot = filePath.rfind('.');
+	if (lastDot != std::string::npos)
+	{
+		std::string extension = filePath.substr(lastDot);
+		std::map<std::string, std::string>::iterator it = extensionToContentType.find(extension);
+		if (it != extensionToContentType.end())
+			return it->second;
+	}
+	return "text/plain";
+}
 std::string Response::statusTextGen(int code)
 {
 	switch (code)
@@ -446,246 +606,4 @@ std::string Response::generateErrorResponse(int code)
 	res += "\r\n";
 	res += body;
 	return res;
-}
-
-void        Response::cut_response(size_t i)
-{
-    _response = _response.substr(i);
-}
-
-
-// Response main method (tkhari9a)
-int Response::respond()
-{
-	_req.setPath(decodePath(_req.getPath()));
-	std::vector<Location> location = _server_conf.getLocations();
-	for (size_t i = 0; i < location.size(); ++i)
-	{
-		setPath(location[0].getRootLocation() + _req.getPath());
-		isResourceFound(getPath());
-		if (_req.getMethodStr() == "GET")
-		{
-
-			if (gettype() == "FILE")
-			{
-				// CGI STARTS HERE
-				std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-				if (file_extension == "php" || file_extension == "sh")
-				{
-					handleCgi();
-					return 0;
-				}
-				// CGI ENDS HERE
-				generateResponse(getPath(), 0, _server_conf);
-				return 0;
-			}
-			else if (gettype() == "FOLDER")
-			{
-				if (getPath()[(int)(getPath().size() - 1)] != '/')
-					setPath(getPath() + "/");
-
-				//ERROR HERE , WE SHOULD FIX IT LATER...
-				if (!Server::isReadableAndExist(getPath(), location[i].getIndexLocation()))
-				{
-					setHeader("Content-Type", "text/html");
-					set_response(generateResponse(getPath(), 1, _server_conf));
-					return 0;
-				}
-				else
-				{
-					if (location[i].getAutoindex())
-					{
-						std::cout << "hna autoindex ta3 achoub " << std::endl;
-						std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
-						std::string response = "HTTP/1.1 200 OK\r\n";
-						response += "Content-Type: text/html\r\n";
-						response += "Content-Length: " + to_string(response_body.length()) + "\r\n";
-						response += "\r\n";
-						response += response_body;
-						set_response(response);
-						return 0;
-					}
-					else
-					{
-						set_response(generateErrorResponse(403));
-						return 0;
-					}
-				}
-			}
-			else
-			{
-				set_response(generateErrorResponse(404));
-				return 0;
-			}
-		}
-		else if (_req.getMethodStr() == "DELETE")
-		{
-			if (gettype() == "FILE")
-			{
-				std::string resourcePath = getPath();
-				if (deleteResource(resourcePath))
-				{
-					// Resource deleted successfully
-					std::string res = "HTTP/1.1 204 No Content\r\n";
-					setHeader("Server", "AstroServer");
-					set_response(res);
-					return 0;
-				}
-				else
-				{
-					set_response(generateErrorResponse(500));
-					return 0;
-				}
-			}
-			else if (gettype() == "FOLDER")
-				set_response(generateErrorResponse(403));
-			else
-			{
-				std::string res = "HTTP/1.1 404 Not Found\r\n";
-				setHeader("Server", "AstroServer");
-				setBody("Resource not found");
-				set_response(res);
-			}
-		}
-		else if (_req.getMethodStr() == "POST")
-		{
-			// CGI STARTS HERE
-				std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-				if (file_extension == "php" || file_extension == "sh")
-				{
-					handleCgi();
-					return 0;
-				}
-				// CGI ENDS HERE
-			std::string _target_file = location[i].getRootLocation() + _req.getPath();
-			if (fileExists(_target_file))
-			{
-				set_response(generateErrorResponse(204));
-				return 0;
-			}
-			std::ofstream file(_target_file.c_str(), std::ios::binary);
-			if (file.fail())
-			{
-				set_response(generateErrorResponse(500));
-				return 0;
-			}
-			if (_req.getMultiformFlag())
-			{
-				std::string body = _req.getBody();
-				body = parseBoundary(body, _req.getBoundary());
-				file.write(body.c_str(), body.length());
-				set_response(generateErrorResponse(200));
-				return 0;
-			}
-			else
-			{
-				file.write(_req.getBody().c_str(), _req.getBody().length());
-				set_response(generateErrorResponse(200));
-				return 0;
-			}
-		}
-	}
-	set_response(generateErrorResponse(405));
-	return 0;
-}
-// Helper function to generate a unique filename
-std::string Response::generateUniqueFilename()
-{
-	std::srand(static_cast<unsigned int>(std::time(NULL)));
-	std::stringstream ss;
-	ss << "/upload_" << std::rand() << ".dat";
-	return ss.str();
-}
-
-// Helper function to save data to a file
-bool Response::saveDataToFile(const std::string &filePath, const std::string &data)
-{
-	std::string	final_path = _server_conf.getRoot() + "/" + _server_conf.getUploadPath() + filePath;
-	std::cout << final_path << std::endl;
-	std::ofstream file(final_path.c_str(), std::ios::binary);
-	if (!file.is_open())
-	{
-		return false;
-	}
-	file << data;
-	file.close();
-	return true;
-}
-
-// Helper method to get the content type from the file extension
-std::string Response::getContentTypeFromExtension(const std::string &filePath)
-{
-	std::map<std::string, std::string> extensionToContentType;
-	extensionToContentType[".html"] = "text/html";
-	extensionToContentType[".htm"] = "text/html";
-	extensionToContentType[".css"] = "text/css";
-	extensionToContentType[".js"] = "application/javascript";
-	extensionToContentType[".jpg"] = "image/jpeg";
-	extensionToContentType[".png"] = "image/png";
-	extensionToContentType[".gif"] = "image/gif";
-	extensionToContentType[".svg"] = "image/svg+xml";
-	extensionToContentType[".pdf"] = "application/pdf";
-	extensionToContentType[".txt"] = "text/plain";
-	extensionToContentType[".zip"] = "application/zip";
-	extensionToContentType[".gz"] = "application/gzip";
-	extensionToContentType[".tar"] = "application/x-tar";
-	extensionToContentType[".xml"] = "application/xml";
-	extensionToContentType[".xhtml"] = "application/xhtml+xml";
-	extensionToContentType[".ico"] = "image/x-icon";
-	extensionToContentType[".avi"] = "video/x-msvideo";
-	extensionToContentType[".bmp"] = "image/bmp";
-	extensionToContentType[".doc"] = "application/msword";
-	extensionToContentType[".gz"] = "application/x-gzip";
-	extensionToContentType[".jpeg"] = "image/jpeg";
-	extensionToContentType[".mp3"] = "audio/mp3";
-	extensionToContentType[".mp4"] = "video/mp4";
-	extensionToContentType[".mpeg"] = "video/mpeg";
-	extensionToContentType[".pdf"] = "application/pdf";
-	extensionToContentType["default"] = "text/html";
-
-	size_t lastDot = filePath.rfind('.');
-	if (lastDot != std::string::npos)
-	{
-		std::string extension = filePath.substr(lastDot);
-		std::map<std::string, std::string>::iterator it = extensionToContentType.find(extension);
-		if (it != extensionToContentType.end())
-			return it->second;
-	}
-	return "text/plain";
-}
-
-// int Response::MethodNotAllowed(const Location &loc)
-// {
-// 	for (size_t j = 0; j < loc.methods.size(); ++j)
-// 	{
-
-// 		if (_req.getMethodStr() == loc.methods[j])
-// 			return 1;
-// 	}
-// 	return 0;
-// }
-
-// CGI 
-int        Response::handleCgi()
-{
-
-	std::cout << "Calling CGI" << std::endl;
-
-	short error_code;
-	// STEP 1: CREATE A CGI OBJECT
-	Cgi cgi(_server_conf.getRoot() + _req.getPath());
-	// STEP 2: INIT ENVIRONMENT VARIABLES
-	cgi.initEnv(_req);
-	// STEP 3: EXECUTE CGI
-	cgi.execute(error_code);
-	// STEP 4: GET CGI RESPONSE
-	std::string cgi_response = cgi.getCgiResponse();
-	// STEP 5: SET RESPONSE
-	set_response(cgi_response);
-	return 0;
-}
-
-void      Response::setCgiState(int state)
-{
-    _cgi_state = state;
 }

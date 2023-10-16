@@ -1,16 +1,32 @@
 #include "../../includes/main.hpp"
 
+Server::~Server() {}
+Server::Server(const Server &other) { *this = other;}
+const std::string 			&Server::getServerName() {return nameServer;}
+const uint16_t 				&Server::getPort() { return port;}
+const in_addr_t 			&Server::getHost() { return host;}
+const size_t 				&Server::getClientMaxBodySize() { return clientMaxBodySize;}
+const std::vector<Location> &Server::getLocations() {return locations;}
+const std::string 			&Server::getRoot() {return root;}
+const std::string 			&Server::getIndex() {return index;}
+const bool 					&Server::getAutoindex() {return autoindex;}
+const std::string 			&Server::getPathErrorPage(error_pages key) {return _errorPages[key];}
+int 						Server::getFd() {return listenFd;}
+void 						Server::setRoot(std::string root) {this->root = root;}
+void 						Server::setFd(int fd) {listenFd = fd;}
+void 						Server::setListen(std::string parametr) {port = atoi(parametr.c_str());}
+void 						Server::setClientMaxBodySize(std::string parametr) {clientMaxBodySize = atoi(parametr.c_str());}
+void						Server::setUploadPath(std::string uploadPath) { this->_uploadPath = uploadPath;}
+std::string					&Server::getUploadPath() { return _uploadPath;}
+void 						Server::setServerName(std::string server_name) { nameServer = server_name;}
+void 						Server::setIndex(std::string index) {this->index = index;}
+const std::map<error_pages, std::string> &Server::getErrorPages() {return _errorPages;}
+
 Server::Server() {
 	setRoot("/");
 	setListen("80");
 	setHost("localhost");
 	setIndex("index.html");
-}
-
-Server::~Server() {}
-
-Server::Server(const Server &other) {
-	*this = other;
 }
 
 Server &Server::operator=(const Server &other) {
@@ -31,10 +47,6 @@ Server &Server::operator=(const Server &other) {
 	return (*this);
 }
 
-void Server::setServerName(std::string server_name) {
-	nameServer = server_name;
-}
-
 void Server::setHost(std::string parametr) {
 	struct sockaddr_in addr;
 
@@ -44,30 +56,6 @@ void Server::setHost(std::string parametr) {
 		throw std::runtime_error("Error: invalid host");
 	host = inet_addr(parametr.c_str());
 }
-
-void Server::setRoot(std::string root) {
-	this->root = root;
-}
-
-void Server::setFd(int fd) {
-	listenFd = fd;
-}
-
-void Server::setListen(std::string parametr) {
-	port = atoi(parametr.c_str());
-}
-
-void Server::setClientMaxBodySize(std::string parametr) {
-	clientMaxBodySize = atoi(parametr.c_str());
-}
-
-void	Server::setUploadPath(std::string uploadPath) {
-	this->_uploadPath = uploadPath;
-};
-
-std::string	&Server::getUploadPath() {
-	return _uploadPath;
-};
 
 void Server::setErrorPages(std::vector<std::string> &parametr) {
 	if (parametr.size() % 2 != 0)
@@ -90,10 +78,6 @@ void Server::setErrorPages(std::vector<std::string> &parametr) {
 		_errorPages[key] = value;
 
 	}
-}
-
-void Server::setIndex(std::string index) {
-	this->index = index;
 }
 
 void Server::setLocation(std::string nameLocation, std::vector<std::string> parametr) {
@@ -193,47 +177,6 @@ int Server::isValidLocation(Location &location) const {
 	return 1;
 }
 
-// getters
-const std::string &Server::getServerName() {
-	return nameServer;
-}
-
-const uint16_t &Server::getPort() {
-	return port;
-}
-
-const in_addr_t &Server::getHost() {
-	return host;
-}
-
-const size_t &Server::getClientMaxBodySize() {
-	return clientMaxBodySize;
-}
-
-const std::vector<Location> &Server::getLocations() {
-	return locations;
-}
-
-const std::string &Server::getRoot() {
-	return root;
-}
-
-const std::map<error_pages, std::string> &Server::getErrorPages() {
-	return _errorPages;
-}
-
-const std::string &Server::getIndex() {
-	return index;
-}
-
-const bool &Server::getAutoindex() {
-	return autoindex;
-}
-
-const std::string &Server::getPathErrorPage(error_pages key) {
-	return _errorPages[key];
-}
-
 const std::vector<Location>::iterator Server::getLocationKey(std::string key) {
 	std::vector<Location>::iterator it = locations.begin();
 	std::vector<Location>::iterator ite = locations.end();
@@ -261,16 +204,6 @@ bool Server::checkLocaitons() const {
 			return false;
 	}
 	return true;
-}
-
-// void Server::setupServer() {
-// 	serveraddress.sin_family = AF_INET;
-// 	serveraddress.sin_addr.s_addr = host;
-// 	serveraddress.sin_port = htons(port);
-// }
-
-int Server::getFd() {
-	return listenFd;
 }
 
 // define is path is directory or file
@@ -349,4 +282,16 @@ void	Server::setupServer(void)
 		std::cerr << "webserv: bind error " << strerror(errno) << " Closing ...." << std::endl;
         exit(EXIT_FAILURE);
     }
+	if (listen(listenFd, SOMAXCONN) == -1)
+	{
+		std::cerr << "webserv: listen error: " << strerror(errno) << std::endl;
+		close(listenFd);
+		exit(EXIT_FAILURE);
+	}
+	if (fcntl(listenFd, F_SETFL, O_NONBLOCK) < 0)
+	{
+		std::cerr << "webserv: fcntl error: " << strerror(errno) << std::endl;
+		close(listenFd);
+		exit(EXIT_FAILURE); 
+	}
 }
