@@ -11,7 +11,7 @@ void Multiplexer::setupServers(std::vector<Server> servers)
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
     {
         it->setupServer();
-        std::cout <<  BLUE_BOLD << "Server Created: ServerName " << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << "Host " << it->getServerName().c_str() << "Port " << it->getPort() << RESET << std::endl;
+        std::cout <<  BLUE_BOLD << "Server " << it->getServerName().c_str() << " is listening on: http://" << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << ":" << it->getPort() << RESET << std::endl;
     }
 }
 

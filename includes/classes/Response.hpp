@@ -45,7 +45,7 @@ class Response {
 		int myFind(std::string src, std::string target);
 		std::string decodePath(std::string path);
 		std::string statusTextGen(int code);
-		std::string generateErrorResponse(int code);
+		std::string generateErrorResponse(int code, bool flag);
 		
 		// CGI
 		int		handleCgi();

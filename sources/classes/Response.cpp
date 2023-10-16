@@ -50,7 +50,7 @@ std::string Response::generateResponse(std::string fullPath, int flag, Server se
 	if (!file)
 	{
 		std::cout << "error in opening the file " << std::endl;
-		set_headers(generateErrorResponse(500));
+		set_headers(generateErrorResponse(500, true));
 		return get_response();
 	}
 	_path = fullPath;
@@ -248,12 +248,25 @@ std::string Response::decodePath(std::string path)
 	return decoded_path;
 }
 
+// std::string Response::LocationMatch()
+// {
+// 	std::string path = _req.getPath();
+// 	std::vector<Location> location = _server_conf.getLocations();
+// 	for (size_t i = 0; i < location.size(); ++i)
+// 	{
+// 		if (path.find(location[i].getLocation()) != std::string::npos)
+// 			return location[i].getLocation();
+// 	}
+// 	return "";
+// }
+
 // Response main method (tkhari9a)
 int Response::respond()
 {
 	_req.setPath(decodePath(_req.getPath()));
 	std::vector<Location> location = _server_conf.getLocations();
 	_check = true;
+
 	for (size_t i = 0; i < location.size(); ++i)
 	{
 		setPath(location[0].getRootLocation() + _req.getPath());
@@ -304,14 +317,14 @@ int Response::respond()
 					}
 					else
 					{
-						set_headers(generateErrorResponse(403));
+						set_headers(generateErrorResponse(403, true));
 						return 0;
 					}
 				}
 			}
 			else
 			{
-				set_headers(generateErrorResponse(404));
+				set_headers(generateErrorResponse(404, true));
 				return 0;
 			}
 		}
@@ -322,26 +335,24 @@ int Response::respond()
 				std::string resourcePath = getPath();
 				if (deleteResource(resourcePath))
 				{
-					// Resource deleted successfully
-					std::string res = "HTTP/1.1 204 No Content\r\n";
-					setHeader("Server", "AstroServer");
-					set_headers(res);
+					set_headers(generateErrorResponse(200, false));
 					return 0;
 				}
 				else
 				{
-					set_headers(generateErrorResponse(500));
+					set_headers(generateErrorResponse(500, false));
 					return 0;
 				}
 			}
 			else if (gettype() == "FOLDER")
-				set_headers(generateErrorResponse(403));
+			{
+				set_headers(generateErrorResponse(403, false));
+				return (0);
+			}
 			else
 			{
-				std::string res = "HTTP/1.1 404 Not Found\r\n";
-				setHeader("Server", "AstroServer");
-				setBody("Resource not found");
-				set_headers(res);
+				set_headers(generateErrorResponse(404, false));
+				return (0);
 			}
 		}
 		else if (_req.getMethodStr() == "POST")
@@ -355,15 +366,19 @@ int Response::respond()
 				}
 				// CGI ENDS HERE
 			std::string _target_file = location[i].getRootLocation() + _req.getPath();
+			// DEBUGGING STARTS
+			std::cout << "target file : " << _target_file << std::endl;
+			// DEBUGGING ENDS
+
 			if (fileExists(_target_file))
 			{
-				set_headers(generateErrorResponse(204));
+				set_headers(generateErrorResponse(204, false));
 				return 0;
 			}
 			std::ofstream file(_target_file.c_str(), std::ios::binary);
 			if (file.fail())
 			{
-				set_headers(generateErrorResponse(500));
+				set_headers(generateErrorResponse(500, false));
 				return 0;
 			}
 			if (_req.getMultiformFlag())
@@ -371,18 +386,18 @@ int Response::respond()
 				std::string body = _req.getBody();
 				body = parseBoundary(body, _req.getBoundary());
 				file.write(body.c_str(), body.length());
-				set_headers(generateErrorResponse(200));
+				set_headers(generateErrorResponse(200, false));
 				return 0;
 			}
 			else
 			{
 				file.write(_req.getBody().c_str(), _req.getBody().length());
-				set_headers(generateErrorResponse(200));
+				set_headers(generateErrorResponse(200, false));
 				return 0;
 			}
 		}
 	}
-	set_headers(generateErrorResponse(405));
+	set_headers(generateErrorResponse(405, true));
 	return 0;
 }
 
@@ -574,11 +589,10 @@ std::string Response::statusTextGen(int code)
 	}
 }
 
-std::string Response::generateErrorResponse(int code)
+std::string Response::generateErrorResponse(int code, bool flag)
 {
 	std::string code_string = to_string(code);
 	std::string res = "HTTP/1.1 " + code_string + " " + statusTextGen(code) + "\r\n";
-	res += "Content-Type: text/html\r\n";
 	res += "Server: AstroServer\r\n";
 	std::string body = "<!DOCTYPE html>\r\n";
 	body += "<html lang='en'>\r\n";
@@ -606,8 +620,17 @@ std::string Response::generateErrorResponse(int code)
 	body += "<h1>" + code_string + " - " + statusTextGen(code) + "</h1>\r\n";
 	body += "</body>\r\n";
 	body += "</html>\r\n";
-	res += "Content-Length: " + to_string(body.length()) + "\r\n";
-	res += "\r\n";
-	res += body;
+	
+	if (flag)
+	{
+		res += "Content-Type: text/html\r\n";
+		res += "Content-Length: " + to_string(body.length()) + "\r\n\r\n";
+		res += body;
+	}
+	else
+		res += "\r\n";
+	// DEBUGGING STARTS
+	std::cout << res << std::endl;
+	// DEBUGGING ENDS
 	return res;
 }

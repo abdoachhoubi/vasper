@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Testing upload</title>
+</head>
+<body>
+	<form id="upload_form">
+		<label for="image">Pick an image</label>
+		<input type="file" name="image" id="image">
+		<button id="button_submit">submit</button>
+	</form>
+</body>
+<script>
+	const button_submit = document.getElementById('button_submit');
+	const image = document.getElementById('image');
+
+	button_submit.addEventListener('click', (e) => {
+		console.log("button clicked");
+		e.preventDefault();
+		const formData = new FormData();
+		formData.append('image', image.files[0]
+		);
+		fetch('http://127.0.0.1:4000/file1.png', {
+			method: 'POST',
+			// headers: {
+			// 	"Access-Control-Allow-Origin": "*",
+			// },
+			body: formData
+		})
+		.then(response => response.json())
+		.then(data => console.log(data))
+		.catch(error => console.log(error));
+	});
+
+</script>
+</html>
