@@ -303,8 +303,8 @@ int Response::getController(Location location)
 
 			if (location.getAutoindex())
 			{
-				std::cout << "dkhal lhad else " << std::endl;
-				std::cout << "hna autoindex ta3 achoub " << std::endl;
+				// std::cout << "dkhal lhad else " << std::endl;
+				// std::cout << "hna autoindex ta3 achoub " << std::endl;
 				std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
 				std::string response = "HTTP/1.1 200 OK\r\n";
 				response += "Content-Type: text/html\r\n";
@@ -432,12 +432,13 @@ int Response::respond()
 	for (it = loc.begin(); it != loc.end(); ++it)
 	{
 		// Location match
-		if (it->getPath() == _req.getPath())
-			setPath(it->getRootLocation() + _req.getPath());
+		if (it->getPath() == _req.getPath()) {
+			_path = it->getRootLocation() + _req.getPath();
+		}
 		else
 			_path = _server_conf.getRoot() + _req.getPath();
 		// DEBUGGING STARTS
-		std::cout << _path << std::endl;
+		std::cout << " Path:  "<< _path << " get_path: " << it->getPath()  << " req: " << _req.getPath() << std::endl;
 		// DEBUGGING ENDS
 		isResourceFound(getPath());
 		if (_req.getMethodStr() == "GET")
