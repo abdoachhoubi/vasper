@@ -251,6 +251,18 @@ std::string Response::decodePath(std::string path)
 // 	std::vector<Location> location = _server_conf.getLocations();
 // 	for (size_t i = 0; i < location.size(); ++i)
 // 	{
+// 		if (path.find(location[i].getLocation()) != std::string::npos)
+// 			return location[i].getLocation();
+// 	}
+// 	return "";
+// }
+
+// std::string Response::LocationMatch()
+// {
+// 	std::string path = _req.getPath();
+// 	std::vector<Location> location = _server_conf.getLocations();
+// 	for (size_t i = 0; i < location.size(); ++i)
+// 	{
 // 		if (path.find(location.getLocation()) != std::string::npos)
 // 			return location.getLocation();
 // 	}
