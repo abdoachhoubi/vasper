@@ -11,7 +11,7 @@ void Multiplexer::setupServers(std::vector<Server> servers)
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
     {
         it->setupServer();
-        std::cout <<  BLUE_BOLD << "Server Created: ServerName " << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << "Host " << it->getServerName().c_str() << "Port " << it->getPort() << RESET << std::endl;
+        std::cout <<  BLUE_BOLD << "Server " << it->getServerName().c_str() << " Created and listening on: http://" << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << ":" << it->getPort() << RESET << std::endl;
     }
 }
 
@@ -62,10 +62,10 @@ void Multiplexer::runServers()
         {
             if (FD_ISSET(i, &_write_temp))
             {
-				if (_clients_map[i].request.getMethod() == GET && _clients_map[i].response._check == false)
+				// if (_clients_map[i].request.getMethod() == GET && _clients_map[i].response._check == false)
 					sendResponse(i, _clients_map[i]);
-				else
-					sendAstro(i, _clients_map[i]);
+				// else
+				// 	sendAstro(i, _clients_map[i]);
 			}
             else if (FD_ISSET(i, &_recv_temp))
             {

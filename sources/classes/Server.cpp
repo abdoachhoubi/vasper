@@ -91,6 +91,7 @@ void Server::setLocation(std::string nameLocation, std::vector<std::string> para
 			std::vector<std::string> value;
 			for (size_t i = 1; i < param.size(); i++)
 				value.push_back(param[i]);
+			location.setRootLocation(root);
 			if (key == "root")
 				location.setRootLocation(value[0]);
 			else if (key == "allow_methods")

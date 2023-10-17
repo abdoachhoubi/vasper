@@ -46,6 +46,11 @@ class Response {
 		std::string decodePath(std::string path);
 		std::string statusTextGen(int code);
 		std::string generateErrorResponse(int code);
+
+		// Controllers
+		int	getController(Location location);
+		int	postController(Location location);
+		int	deleteController(Location location);
 		
 		// CGI
 		int		handleCgi();
