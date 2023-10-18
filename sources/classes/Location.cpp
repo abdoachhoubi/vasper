@@ -24,6 +24,7 @@ Location &Location::operator=(const Location &rhs) {
 		autoindex = rhs.autoindex;
 		index = rhs.index;
 		_methods = rhs._methods;
+		allowed_methods = rhs.allowed_methods;
 		_return = rhs._return;
 		_alias = rhs._alias;
 		cgi_path = rhs.cgi_path;
@@ -37,6 +38,7 @@ Location::~Location() {}
 
 // setters
 void Location::setMethods(std::vector<std::string> methods) {
+	allowed_methods = methods;
 	_methods = std::vector<bool>(3, false);
 	for (size_t i = 0; i < methods.size(); i++) {
 		if (methods[i] == "GET")
@@ -48,6 +50,16 @@ void Location::setMethods(std::vector<std::string> methods) {
 		else
 			throw std::runtime_error("Error: invalid method");
 	}
+}
+
+void Location::setAllowedMethods(std::vector<std::string> methods)
+{
+	allowed_methods = methods;
+}
+
+std::vector<std::string> Location::getAllowedMethods() const
+{
+	return (allowed_methods);
 }
 
 void Location::setAutoindex(std::string parametr) {

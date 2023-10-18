@@ -42,6 +42,9 @@ class Location
 
 		std::string getPrintMethods() const;
 
+		void setAllowedMethods(std::vector<std::string> methods);
+		std::vector<std::string> getAllowedMethods() const;
+
 	private:
 		std::string					path;
 		std::string					root;
@@ -51,6 +54,7 @@ class Location
 		std::string					_return;
 		std::string					_alias;
 		std::vector<std::string>	cgi_path;
+		std::vector<std::string>	allowed_methods;
 		std::vector<std::string>	cgi_extension;
 		unsigned long				clientMaxBodySize;
 };

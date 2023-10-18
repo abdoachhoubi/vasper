@@ -23,19 +23,19 @@ std::string Response::get_response() { return this->_response; }
 std::string Response::getPath() { return this->_path; }
 std::string Response::get_headers() { return (_headers); }
 
-std::string Response::isResourceFound(const std::string &fullPath)
+bool Response::isResourceFound(const std::string &fullPath)
 {
 	struct stat fileStat;
 	if (stat(fullPath.c_str(), &fileStat) == 0)
 	{
 		if (S_ISREG(fileStat.st_mode))
-			settype("FILE");
+			_type = "FILE";
 		else if (S_ISDIR(fileStat.st_mode))
-			settype("FOLDER");
+			_type = "FOLDER";
 	}
 	else
-		settype("ERROR");
-	return (gettype());
+		_type = "ERROR";
+	return (!(_type == "ERROR"));
 }
 
 std::string Response::generateResponse(std::string fullPath, int flag, Server server)
@@ -269,8 +269,6 @@ std::string Response::decodePath(std::string path)
 // 	return "";
 // }
 
-
-
 int Response::getController(Location location)
 {
 	if (gettype() == "FILE")
@@ -427,26 +425,64 @@ int Response::respond()
 	_req.setPath(decodePath(_req.getPath()));
 	_check = true;
 
+	std::string p = _req.getPath().substr(0, _req.getPath().find("/", 1));
+
 	std::vector<Location> loc = _server_conf.getLocations();
+
 	std::vector<Location>::iterator it;
-	for (it = loc.begin(); it != loc.end(); ++it)
+
+	std::string loc_path = _req.getPath();
+	if (loc_path[loc_path.length() - 1] == '/')
+		loc_path = loc_path.substr(0, loc_path.length() - 1);
+	loc_path = loc_path == "" ? "/" : loc_path;
+	std::vector<std::string> sub_uris = generateSubUris(loc_path);
+	// reverse the vector
+	std::reverse(sub_uris.begin(), sub_uris.end());
+	bool flag = true;
+	std::vector<std::string> methods;
+	for (size_t i = 0; i < sub_uris.size(); ++i)
 	{
-		// Location match
-		if (it->getPath() == _req.getPath()) {
-			_path = it->getRootLocation() + _req.getPath();
+		if (!flag)
+			break;
+		std::vector<Location>::iterator it;
+		for (it = loc.begin(); it != loc.end(); ++it)
+		{
+			if (!flag)
+			break;
+			// remove last character from sub_uri
+			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
+			if (sub_uri == "")
+				sub_uri = "/";
+			if (it->getPath() == sub_uri)
+			{
+				flag = false;
+			// DEBUGGING STARTS
+			std::cout << "LOOKING FOR MATCH [" << it->getPath() << " == " << sub_uri << "]" << std::endl;
+			// DEBUGGING ENDS
+				_path = it->getRootLocation() + _req.getPath();
+				if (it->getPath() != "/" && _req.getPath() == "/")
+					_path = _server_conf.getRoot() + _req.getPath();
+
+				isResourceFound(_path);
+				// check if location contains the method in it's allowed methods
+				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
+				{
+					set_headers(generateErrorResponse(405));
+					return (0);
+				}
+				if (_req.getMethodStr() == "GET")
+					return (getController(*it));
+				else if (_req.getMethodStr() == "DELETE")
+					return (deleteController(*it));
+				else if (_req.getMethodStr() == "POST")
+					return (postController(*it));
+				else
+				{
+					set_headers(generateErrorResponse(405));
+					return (0);
+				}
+			}
 		}
-		else
-			_path = _server_conf.getRoot() + _req.getPath();
-		// DEBUGGING STARTS
-		std::cout << " Path:  "<< _path << " get_path: " << it->getPath()  << " req: " << _req.getPath() << std::endl;
-		// DEBUGGING ENDS
-		isResourceFound(getPath());
-		if (_req.getMethodStr() == "GET")
-			return (getController(*it));
-		else if (_req.getMethodStr() == "DELETE")
-			return (deleteController(*it));
-		else if (_req.getMethodStr() == "POST")
-			return (postController(*it));
 	}
 	set_headers(generateErrorResponse(405));
 	return (0);
@@ -478,16 +514,15 @@ bool Response::saveDataToFile(const std::string &filePath, const std::string &da
 
 // Helper method to get the content type from the file extension
 
-// int Response::MethodNotAllowed(const Location &loc)
-// {
-// 	for (size_t j = 0; j < loc.methods.size(); ++j)
-// 	{
-
-// 		if (_req.getMethodStr() == loc.methods[j])
-// 			return 1;
-// 	}
-// 	return 0;
-// }
+bool Response::isMethodAllowed(std::vector<std::string> methods, std::string req_method)
+{
+	for (size_t i = 0; i < methods.size(); ++i)
+	{
+		if (req_method == methods[i])
+			return (true);
+	}
+	return (false);
+}
 
 // CGI
 int Response::handleCgi()

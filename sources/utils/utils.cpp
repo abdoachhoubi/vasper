@@ -45,3 +45,27 @@ std::vector<std::string> splitParametrs(std::string line, std::string sep)
 	}
 	return (str);
 }
+
+std::vector<std::string> generateSubUris(const std::string &input) {
+    std::vector<std::string> substrings;
+    std::istringstream ss(input);
+    std::string token, current = "";
+    while (std::getline(ss, token, '/')) {
+        current += token + "/";
+        substrings.push_back(current);
+    }
+    return substrings;
+}
+
+// removes white spaces from the beginning and the end of the string (space, tab, etc.)
+std::string str_trim(std::string src)
+{
+	size_t start = 0;
+	size_t end = src.size() - 1;
+
+	while (start < src.size() && isspace(src[start]))
+		start++;
+	while (end > 0 && isspace(src[end]))
+		end--;
+	return (src.substr(start, end - start + 1));
+}

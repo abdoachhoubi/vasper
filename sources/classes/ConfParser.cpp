@@ -122,12 +122,12 @@ void ConfParser::createServer(std::string &config, Server &server)
 				if (value[1] != "{")
 					throw std::runtime_error("Error: Server config file is not well formated 7");
 				std::vector<std::string> location;
-				while (i < line.size() && line[i] != "}")
+				while (i < line.size() && str_trim(line[i]) != "}")
 				{
 					Server::checkToken(line[i]);
 					location.push_back(line[i++]);
 				}
-				if (line[i] != "}")
+				if (str_trim(line[i]) != "}")
 					throw std::runtime_error("Error: Server config file is not well formated 8");
 				server.setLocation(name, location);
 			}

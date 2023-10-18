@@ -13,7 +13,7 @@ class Response {
 	    Response(Request &req, Server server);
 		Response();
 		void set_headers(std::string headers);
-		std::string isResourceFound(const std::string& fullPath);
+		bool isResourceFound(const std::string& fullPath);
 		std::string generateResponse(std::string fullPath, int flag, Server server);
 		void setServer(Server server);
 		void set_response(std::string response);
@@ -35,7 +35,7 @@ class Response {
 		std::string getContentType();
 		bool isResourceDeletable(const std::string& resourcePath);
 		bool deleteResource(const std::string& resourcePath);
-		int MethodNotAllowed(const Location& loc);
+		bool isMethodAllowed(std::vector<std::string> methods, std::string req_method);
 		std::string generateUniqueFilename();
 		bool saveDataToFile(const std::string& filePath, const std::string& data);
 		bool fileExists(const std::string& f);

@@ -1,6 +1,11 @@
 #include "../../includes/main.hpp"
 
-Multiplexer::Multiplexer() {}
+Multiplexer::Multiplexer() {
+	fdmax = 0;
+	_recv_fds = fd_set();
+	_write_fds = fd_set();
+}
+
 Multiplexer::~Multiplexer() {}
 
 void Multiplexer::setupServers(std::vector<Server> servers)

@@ -99,16 +99,18 @@ void Server::setLocation(std::string nameLocation, std::vector<std::string> para
 				location.setRootLocation(value[0]);
 			}
 			else if (key == "allow_methods")
+			{
 				location.setMethods(value);
+				location.setAllowedMethods(value);
+			}
 			else if (key == "autoindex")
 				location.setAutoindex(value[0]);
 			else if (key == "index")
 				location.setIndexLocation(value[0]);
 			else if (key == "return")
 				location.setReturn(value[0]);
-			else if (key == "alias") {
+			else if (key == "alias")
 				location.setAlias(value[0]);
-			}
 			else if (key == "cgi_path")
 				location.setCgiPath(value);
 			else if (key == "cgi_extension")
@@ -192,6 +194,23 @@ const std::vector<Location>::iterator Server::getLocationKey(std::string key) {
 	return it;
 }
 
+std::string strtrim(const std::string& input) {
+    size_t start = 0;
+    size_t end = input.length() - 1;
+
+    // Find the position of the first non-white space character from the beginning
+    while (start <= end && std::isspace(input[start])) {
+        start++;
+    }
+
+    // Find the position of the first non-white space character from the end
+    while (end >= start && std::isspace(input[end])) {
+        end--;
+    }
+
+    return input.substr(start, end - start + 1);
+}
+
 void Server::checkToken(std::string &parametr) {
 	std::string::size_type pos = parametr.find('#');
 	if (pos != std::string::npos)
@@ -199,6 +218,7 @@ void Server::checkToken(std::string &parametr) {
 	pos = parametr.find(";");
 	if (pos != std::string::npos)
 		parametr.erase(pos);
+	parametr = strtrim(parametr);
 }
 
 bool Server::checkLocaitons() const {
