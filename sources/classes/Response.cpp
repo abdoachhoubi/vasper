@@ -374,8 +374,11 @@ int Response::deleteController(Location location)
 		if (deleteResource(resourcePath))
 		{
 			// Resource deleted successfully
-			std::string res = "HTTP/1.1 204 No Content\r\n";
-			setHeader("Server", "AstroServer");
+			std::string res = "HTTP/1.1 200 OK\r\n";
+			res += "Server: AstroServer\r\n";
+			res += "Content-Length: 0\r\n";
+			res += "Content-Type: application/json\r\n";
+			res += "\r\n";
 			set_headers(res);
 			return 0;
 		}
@@ -393,8 +396,9 @@ int Response::deleteController(Location location)
 	else
 	{
 		std::string res = "HTTP/1.1 404 Not Found\r\n";
-		setHeader("Server", "AstroServer");
-		setBody("Resource not found");
+		res += "Content-Length: 0\r\n";
+		res += "Content-Type: application/json\r\n";
+		res += "\r\n";
 		set_headers(res);
 		return (0);
 	}
