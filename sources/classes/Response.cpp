@@ -2,8 +2,8 @@
 
 // Constructors
 
-Response::Response(){};
-Response::Response(Request &req, Server server) : _req(req), _server_conf(server) { contentType = getContentTypeFromExtension(req.getPath()); }
+Response::Response(){statusCode = 200;};
+Response::Response(Request &req, Server server) : _req(req), _server_conf(server) { contentType = getContentTypeFromExtension(req.getPath());statusCode = 200; }
 void Response::setServer(Server server) { _server_conf = server; }
 void Response::setRequest(Request req) { _req = req; }
 int Response::getStatusCode() const { return statusCode; }
@@ -56,7 +56,7 @@ std::string Response::generateResponse(std::string fullPath, int flag, Server se
 	fileSize = file.tellg();
 	contentType = getContentTypeFromExtension(fullPath);
 	file.close();
-	setStatus(200, "OK");
+	setStatus(statusCode, statusTextGen(statusCode));
 	setHeader("Server", "MyWebServer");
 	setHeader("Content-Type", contentType);
 	setHeader("Content-length", to_string(fileSize));
@@ -81,7 +81,7 @@ void Response::setStatus(int statusCode, const std::string &statusText)
 
 std::string Response::toString()
 {
-	std::string hedears = "HTTP/1.1 " + to_string(statusCode) + " " + statusText + "\r\n";
+	std::string hedears = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 		hedears += it->first + ": " + it->second + "\r\n";
@@ -245,30 +245,6 @@ std::string Response::decodePath(std::string path)
 	return decoded_path;
 }
 
-// std::string Response::LocationMatch()
-// {
-// 	std::string path = _req.getPath();
-// 	std::vector<Location> location = _server_conf.getLocations();
-// 	for (size_t i = 0; i < location.size(); ++i)
-// 	{
-// 		if (path.find(location[i].getLocation()) != std::string::npos)
-// 			return location[i].getLocation();
-// 	}
-// 	return "";
-// }
-
-// std::string Response::LocationMatch()
-// {
-// 	std::string path = _req.getPath();
-// 	std::vector<Location> location = _server_conf.getLocations();
-// 	for (size_t i = 0; i < location.size(); ++i)
-// 	{
-// 		if (path.find(location.getLocation()) != std::string::npos)
-// 			return location.getLocation();
-// 	}
-// 	return "";
-// }
-
 int Response::getController(Location location)
 {
 	if (gettype() == "FILE")
@@ -304,7 +280,7 @@ int Response::getController(Location location)
 				// std::cout << "dkhal lhad else " << std::endl;
 				// std::cout << "hna autoindex ta3 achoub " << std::endl;
 				std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
-				std::string response = "HTTP/1.1 200 OK\r\n";
+				std::string response = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 				response += "Content-Type: text/html\r\n";
 				response += "Content-Length: " + to_string(response_body.length()) + "\r\n";
 				response += "\r\n";
@@ -404,45 +380,86 @@ int Response::deleteController(Location location)
 	}
 }
 
-// Tester
-void printLocations(std::vector<Location> loc, std::string path)
-{
-	// create iterator
-	std::vector<Location>::iterator it;
 
-	// print path of each location (getPath)
-	for (it = loc.begin(); it != loc.end(); ++it)
-	{
-		std::cout << it->getPath() << std::endl;
-		std::cout << it->getRootLocation() << std::endl;
-		if (it->getPath() == path)
-		{
-			std::cout << BLUE_BOLD << "found it" << RESET << std::endl;
-			break;
-		}
-	}
-}
+// std::string generate() {}
 
 // Response main method (tkhari9a)
 int Response::respond()
 {
+	std::string _req_path = _req.getPath();
 	_req.setPath(decodePath(_req.getPath()));
+	std::string loc_path = _req.getPath();
+	if (loc_path[loc_path.length() - 1] == '/')
+		loc_path = loc_path.substr(0, loc_path.length() - 1);
+	loc_path = loc_path == "" ? "/" : loc_path;
+
 	_check = true;
 
 	std::string p = _req.getPath().substr(0, _req.getPath().find("/", 1));
 
 	std::vector<Location> loc = _server_conf.getLocations();
 
-	std::vector<Location>::iterator it;
-
-	std::string loc_path = _req.getPath();
-	if (loc_path[loc_path.length() - 1] == '/')
-		loc_path = loc_path.substr(0, loc_path.length() - 1);
-	loc_path = loc_path == "" ? "/" : loc_path;
+	// redirections
+	std::vector<Location>::iterator itx;
 	std::vector<std::string> sub_uris = generateSubUris(loc_path);
-	// reverse the vector
 	std::reverse(sub_uris.begin(), sub_uris.end());
 	bool flag = true;
+	for (size_t i = 0; i < sub_uris.size(); ++i)
+	{
+		if (!flag)
+			break;
+		for (itx = loc.begin(); itx != loc.end(); ++itx)
+		{
+			if (!flag)
+				break;
+			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
+			if (sub_uri == "")
+				sub_uri = "/";
+			if (itx->getPath() == sub_uri)
+			{
+				// DEBUGGING STARTS
+				std::cout << "FOUND MATCH IN REDIR" << std::endl;
+				// DEBUGGING ENDS
+				flag = false;
+				bool redir = false;
+				if (!itx->getReturn().empty())
+				{
+					// DEBUGGING STARTS
+					std::cout << "FOUND REDIRECTION" << std::endl;
+					// DEBUGGING ENDS
+					std::vector<Location>::iterator ity;
+					for (ity = loc.begin(); ity != loc.end(); ++ity)
+					{
+						if (ity->getPath() == itx->getReturn())
+						{
+							statusCode = 302;
+							loc_path = ity->getPath();
+							_req.setPath(loc_path);
+							redir = true;
+							break ;
+						}
+					}
+				}
+				else
+					redir = true;
+				if (!redir)
+				{
+					set_headers(generateErrorResponse(301));
+					return (0);
+				}
+			}
+		}
+	}
+
+	// DEBUGGING STARTS
+	std::cout << "LOC PATH: " << loc_path << std::endl;
+	// DEBUGGING ENDS
+
+	sub_uris = generateSubUris(loc_path);
+	std::reverse(sub_uris.begin(), sub_uris.end());
+
+	std::vector<Location>::iterator it;
+	flag = true;
 	std::vector<std::string> methods;
 	for (size_t i = 0; i < sub_uris.size(); ++i)
 	{
@@ -452,7 +469,7 @@ int Response::respond()
 		for (it = loc.begin(); it != loc.end(); ++it)
 		{
 			if (!flag)
-			break;
+				break;
 			// remove last character from sub_uri
 			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
 			if (sub_uri == "")
@@ -460,13 +477,13 @@ int Response::respond()
 			if (it->getPath() == sub_uri)
 			{
 				flag = false;
-			// DEBUGGING STARTS
-			std::cout << "LOOKING FOR MATCH [" << it->getPath() << " == " << sub_uri << "]" << std::endl;
-			// DEBUGGING ENDS
-				_path = it->getRootLocation() + _req.getPath();
-				if (it->getPath() != "/" && _req.getPath() == "/")
-					_path = _server_conf.getRoot() + _req.getPath();
-
+				_path = it->getRootLocation() + _req_path;
+				if (it->getPath() != "/" && _req_path == "/")
+					_path = _server_conf.getRoot() + _req_path;
+				// check if resource exists
+				// DEBUGGING STARTS
+				std::cout << "PATH: " << _path << std::endl;
+				// DEBUGGING ENDS
 				isResourceFound(_path);
 				// check if location contains the method in it's allowed methods
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
