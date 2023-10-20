@@ -9,7 +9,7 @@ void ConfParser::parse(const std::string &config_file)
 	std::string content = Server::fileToString(config_file);
 	splitServers(content);
 	if (serv_conf.size() != nbr_serv)
-		throw std::runtime_error("Error: Server config file is not well formated 1");
+		throw std::runtime_error("Error: Server config file is not well formated 100");
 
 	for (size_t i = 0; i < nbr_serv; i++)
 	{
@@ -23,7 +23,10 @@ void ConfParser::parse(const std::string &config_file)
 		for (size_t j = i + 1; j < servers.size(); j++)
 		{
 			if (servers[i].getPort() == servers[j].getPort() && servers[i].getHost() == servers[j].getHost())
+			{
+				
 				throw std::runtime_error("Error: Server config file is not well formated 11");
+			}
 		}
 	}
 }
@@ -35,8 +38,10 @@ void ConfParser::splitServers(std::string &content)
 
 	while (start != end && start < content.length())
 	{
-		start = startServer(start, content);
+		start = startServer(start, content) + 1;
 		end = endServer(start, content);
+		if (end == start)
+			break;
 		serv_conf.push_back(content.substr(start, end - start + 1));
 		nbr_serv++;
 		start = end;
@@ -166,8 +171,8 @@ void ConfParser::createServer(std::string &config, Server &server)
 	}
 	// if (Server::isReadableAndExist(server.getRoot(), server.getIndex()) < 0)
 	// 	throw std::runtime_error("Error: Index from config file not found 1");
-	if (Server::isReadableAndExist(server.getRoot(), "") < 0)
-		throw std::runtime_error("Error: Root from config file not found 2");
+	// if (Server::isReadableAndExist(server.getRoot(), "") < 0)
+	// 	throw std::runtime_error("Error: Root from config file not found 2");
 	// if (!server.checkLocaitons())
 	// 	throw std::runtime_error("Error: in Location from config file");
 	if (!server.isValidErrorPages())
