@@ -2,8 +2,12 @@
 
 // Constructors
 
-Response::Response(){statusCode = 200;};
-Response::Response(Request &req, Server server) : _req(req), _server_conf(server) { contentType = getContentTypeFromExtension(req.getPath());statusCode = 200; }
+Response::Response() { statusCode = 200; };
+Response::Response(Request &req, Server server) : _req(req), _server_conf(server)
+{
+	contentType = getContentTypeFromExtension(req.getPath());
+	statusCode = 200;
+}
 void Response::setServer(Server server) { _server_conf = server; }
 void Response::setRequest(Request req) { _req = req; }
 int Response::getStatusCode() const { return statusCode; }
@@ -380,7 +384,6 @@ int Response::deleteController(Location location)
 	}
 }
 
-
 // std::string generate() {}
 
 // Response main method (tkhari9a)
@@ -436,7 +439,7 @@ int Response::respond()
 							loc_path = ity->getPath();
 							_req.setPath(loc_path);
 							redir = true;
-							break ;
+							break;
 						}
 					}
 				}
@@ -450,10 +453,6 @@ int Response::respond()
 			}
 		}
 	}
-
-	// DEBUGGING STARTS
-	std::cout << "LOC PATH: " << loc_path << std::endl;
-	// DEBUGGING ENDS
 
 	sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
@@ -481,9 +480,6 @@ int Response::respond()
 				if (it->getPath() != "/" && _req_path == "/")
 					_path = _server_conf.getRoot() + _req_path;
 				// check if resource exists
-				// DEBUGGING STARTS
-				std::cout << "PATH: " << _path << std::endl;
-				// DEBUGGING ENDS
 				isResourceFound(_path);
 				// check if location contains the method in it's allowed methods
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
