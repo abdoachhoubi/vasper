@@ -240,6 +240,7 @@ int ConfParser::print()
 				std::cout << "location methods: " << *itm << std::endl;
 			}
 			std::cout << "location methods: " << itl->getPrintMethods() << std::endl;
+			std::cout << "cgi: " << itl->getCGI() << std::endl;
 		}
 	}
 	return 0;

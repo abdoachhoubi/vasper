@@ -85,6 +85,8 @@ void Server::setErrorPages(std::vector<std::string> &parametr)
 	}
 }
 
+
+
 void Server::setLocation(std::string nameLocation, std::vector<std::string> parametr)
 {
 	Location location;
@@ -120,33 +122,14 @@ void Server::setLocation(std::string nameLocation, std::vector<std::string> para
 				location.setReturn(value[0]);
 			else if (key == "alias")
 				location.setAlias(value[0]);
+			else if (key == "cgi")
+				location.setCGI(value[0]);
 			else if (key == "cgi_path")
 				location.setCgiPath(value);
 			else if (key == "cgi_extension")
 				location.setCgiExtension(value);
 			else if (key == "max_body_size")
 				location.setMaxBodySize(value[0]);
-
-			// if (key == "root")
-			// 	location.setRootLocation(value);
-			// else if (key == "methods")
-			// 	location.setMethods(value);
-			// else if (key == "autoindex")
-			// 	location.setAutoindex(value);
-			// else if (key == "index")
-			// 	location.setIndexLocation(value);
-			// else if (key == "return")
-			// 	location.setReturn(value);
-			// else if (key == "alias") {
-			// 	std::cout << "alias: " << value << std::endl;
-			// 	location.setAlias(value);
-			// }
-			// else if (key == "cgi_path")
-			// 	location.setCgiPath(value);
-			// else if (key == "cgi_extension")
-			// 	location.setCgiExtension(value);
-			// else if (key == "max_body_size")
-			// 	location.setMaxBodySize(value);
 		}
 	}
 	location.setPath(nameLocation);
@@ -177,22 +160,11 @@ bool Server::isValidErrorPages()
 
 int Server::isValidLocation(Location &location) const
 {
+	// TODO: CHANGE CONDITION
 	if (location.getPath() == "/")
 	{
 		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
 			return (0);
-		// if (ConfParser::checkFile(location.getIndexLocation(), 4) < 0)
-		// {
-		// 	std::string path = location.getRootLocation() + location.getPath() + "/" + location.getIndexLocation();
-		// 	if (ConfParser::getTypePath(path) != 1)
-		// 	{
-		// 		std::string root = getcwd(NULL, 0);
-		// 		location.setRootLocation(root);
-		// 		path = root + location.getPath() + "/" + location.getIndexLocation();
-		// 	}
-		// 	if (path.empty() || ConfParser::getTypePath(path) != 1 || ConfParser::checkFile(path, 4) < 0)
-		// 		return (0);
-		// }
 		if (location.getCgiPath().size() != location.getCgiExtension().size())
 			return (0);
 		std::vector<std::string>::const_iterator it;
@@ -238,25 +210,6 @@ int Server::isValidLocation(Location &location) const
 		std::cout << GREEN_BOLD << "IT'S OKAY :)" << RESET << std::endl;
 		// DEBUGGING ENDS
 	}
-	// else
-	// {
-	// 	if (location.getPath().empty())
-	// 		return 0;
-	// 	if (location.getRootLocation().empty())
-	// 		return 0;
-	// 	if (location.getMethods().empty())
-	// 		return 0;
-	// 	if (location.getIndexLocation().empty())
-	// 		return 0;
-	// 	if (location.getAlias().empty())
-	// 		return 0;
-	// 	if (location.getCgiPath().empty())
-	// 		return 0;
-	// 	if (location.getCgiExtension().empty())
-	// 		return 0;
-	// 	if (location.getMaxBodySize() == 0)
-	// 		return 0;
-	// }
 	// DEBUGGING STARTS
 	std::cout << "LOL XD" << std::endl;
 	// DEBUGGING ENDS

@@ -27,6 +27,7 @@ int main(int ac, char **av)
 
             config_file = (ac == 1 ? "./config/default.conf" : av[1]);
             config_parser.parse(config_file);
+            // config_parser.print();
 
             multiplexer.setupServers(config_parser.getServers());
             multiplexer.runServers();

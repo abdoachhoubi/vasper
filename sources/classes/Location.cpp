@@ -36,6 +36,7 @@ Location &Location::operator=(const Location &rhs)
 		cgi_extension = rhs.cgi_extension;
 		clientMaxBodySize = rhs.clientMaxBodySize;
 		_ext_path = rhs._ext_path;
+		cgi = rhs.cgi;
 	}
 	return (*this);
 }
@@ -139,3 +140,15 @@ std::string Location::getPrintMethods() const
 		result += "DELETE ";
 	return (result);
 }
+
+void Location::setCGI(std::string parametr)
+{
+	if (parametr == "on")
+		cgi = true;
+	else if (parametr == "off")
+		cgi = false;
+	else
+		throw std::runtime_error("Error: invalid cgi");
+}
+
+bool Location::getCGI() const { return (this->cgi); }

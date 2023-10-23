@@ -47,6 +47,9 @@ class Location
 		void setAllowedMethods(std::vector<std::string> methods);
 		std::vector<std::string> getAllowedMethods() const;
 
+		void setCGI(std::string parametr);
+		bool getCGI() const;
+
 		std::map<std::string, std::string> _ext_path;
 
 	private:
@@ -61,4 +64,5 @@ class Location
 		std::vector<std::string>	allowed_methods;
 		std::vector<std::string>	cgi_extension;
 		unsigned long				clientMaxBodySize;
+		bool						cgi;
 };
