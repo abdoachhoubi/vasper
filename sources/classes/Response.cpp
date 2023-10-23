@@ -2,11 +2,16 @@
 
 // Constructors
 
-Response::Response() { statusCode = 200; };
+Response::Response()
+{
+	statusCode = 200;
+	_cgi_state = 0;
+};
 Response::Response(Request &req, Server server) : _req(req), _server_conf(server)
 {
 	contentType = getContentTypeFromExtension(req.getPath());
 	statusCode = 200;
+	_cgi_state = 0;
 }
 void Response::setServer(Server server) { _server_conf = server; }
 void Response::setRequest(Request req) { _req = req; }
@@ -19,7 +24,6 @@ void Response::setPath(std::string path) { this->_path = path; }
 void Response::settype(std::string type) { this->_type = type; }
 void Response::setHeader(const std::string &key, const std::string &value) { headers[key] = value; }
 void Response::setBody(const std::string &body) { this->body = body; }
-void Response::setCgiState(int state) { _cgi_state = state; }
 void Response::cut_response(size_t i) { _response = _response.substr(i); }
 std::string Response::getContentType() { return contentType; }
 std::string Response::gettype() { return this->_type; }
@@ -255,9 +259,17 @@ int Response::getController(Location location)
 	{
 		// CGI STARTS HERE
 		std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-		if (file_extension == "php" || file_extension == "sh")
+		if (file_extension == "py" || file_extension == "sh")
 		{
-			handleCgi();
+			_cgi_state = 1;
+			handleCgi(location);
+			std::cout << "status code: " << statusCode << std::endl;
+			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+			res += "Content-Type: text/html\r\n";
+			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+			res += "\r\n";
+			res += _response;
+			set_headers(res);
 			return 0;
 		}
 		// CGI ENDS HERE
@@ -278,7 +290,6 @@ int Response::getController(Location location)
 		}
 		else
 		{
-
 			if (location.getAutoindex())
 			{
 				// std::cout << "dkhal lhad else " << std::endl;
@@ -311,9 +322,15 @@ int Response::postController(Location location)
 {
 	// CGI STARTS HERE
 	std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-	if (file_extension == "php" || file_extension == "sh")
+	if (file_extension == "py" || file_extension == "sh")
 	{
-		handleCgi();
+		handleCgi(location);
+		std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+		res += "Content-Type: text/html\r\n";
+		res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+		res += "\r\n";
+		res += _response;
+		set_headers(res);
 		return 0;
 	}
 	// CGI ENDS HERE
@@ -403,56 +420,50 @@ int Response::respond()
 	std::vector<Location> loc = _server_conf.getLocations();
 
 	// redirections
-	std::vector<Location>::iterator itx;
+	// std::vector<Location>::iterator itx;
 	std::vector<std::string> sub_uris = generateSubUris(loc_path);
-	std::reverse(sub_uris.begin(), sub_uris.end());
+	// std::reverse(sub_uris.begin(), sub_uris.end());
 	bool flag = true;
-	for (size_t i = 0; i < sub_uris.size(); ++i)
-	{
-		if (!flag)
-			break;
-		for (itx = loc.begin(); itx != loc.end(); ++itx)
-		{
-			if (!flag)
-				break;
-			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
-			if (sub_uri == "")
-				sub_uri = "/";
-			if (itx->getPath() == sub_uri)
-			{
-				// DEBUGGING STARTS
-				std::cout << "FOUND MATCH IN REDIR" << std::endl;
-				// DEBUGGING ENDS
-				flag = false;
-				bool redir = false;
-				if (!itx->getReturn().empty())
-				{
-					// DEBUGGING STARTS
-					std::cout << "FOUND REDIRECTION" << std::endl;
-					// DEBUGGING ENDS
-					std::vector<Location>::iterator ity;
-					for (ity = loc.begin(); ity != loc.end(); ++ity)
-					{
-						if (ity->getPath() == itx->getReturn())
-						{
-							statusCode = 302;
-							loc_path = ity->getPath();
-							_req.setPath(loc_path);
-							redir = true;
-							break;
-						}
-					}
-				}
-				else
-					redir = true;
-				if (!redir)
-				{
-					set_headers(generateErrorResponse(301));
-					return (0);
-				}
-			}
-		}
-	}
+	// for (size_t i = 0; i < sub_uris.size(); ++i)
+	// {
+	// 	if (!flag)
+	// 		break;
+	// 	for (itx = loc.begin(); itx != loc.end(); ++itx)
+	// 	{
+	// 		if (!flag)
+	// 			break;
+	// 		std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
+	// 		if (sub_uri == "")
+	// 			sub_uri = "/";
+	// 		if (itx->getPath() == sub_uri)
+	// 		{
+	// 			flag = false;
+	// 			bool redir = false;
+	// 			if (!itx->getReturn().empty())
+	// 			{
+	// 				std::vector<Location>::iterator ity;
+	// 				for (ity = loc.begin(); ity != loc.end(); ++ity)
+	// 				{
+	// 					if (ity->getPath() == itx->getReturn())
+	// 					{
+	// 						statusCode = 302;
+	// 						loc_path = ity->getPath();
+	// 						_req.setPath(loc_path);
+	// 						redir = true;
+	// 						break;
+	// 					}
+	// 				}
+	// 			}
+	// 			else
+	// 				redir = true;
+	// 			if (!redir)
+	// 			{
+	// 				set_headers(generateErrorResponse(301));
+	// 				return (0);
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
@@ -477,6 +488,9 @@ int Response::respond()
 			{
 				flag = false;
 				_path = it->getRootLocation() + _req_path;
+				// DEBUGGING STARTS
+				std::cout << "path: " << _path << std::endl;
+				// DEBUGGING ENDS
 				if (it->getPath() != "/" && _req_path == "/")
 					_path = _server_conf.getRoot() + _req_path;
 				// check if resource exists
@@ -539,25 +553,6 @@ bool Response::isMethodAllowed(std::vector<std::string> methods, std::string req
 			return (true);
 	}
 	return (false);
-}
-
-// CGI
-int Response::handleCgi()
-{
-	std::cout << "Calling CGI" << std::endl;
-
-	short error_code;
-	// STEP 1: CREATE A CGI OBJECT
-	Cgi cgi(_server_conf.getRoot() + _req.getPath());
-	// STEP 2: INIT ENVIRONMENT VARIABLES
-	cgi.initEnv(_req);
-	// STEP 3: EXECUTE CGI
-	cgi.execute(error_code);
-	// STEP 4: GET CGI RESPONSE
-	std::string cgi_response = cgi.getCgiResponse();
-	// STEP 5: SET RESPONSE
-	set_headers(cgi_response);
-	return 0;
 }
 
 std::string Response::getContentTypeFromExtension(const std::string &filePath)
@@ -732,4 +727,114 @@ std::string Response::generateErrorResponse(int code)
 	else
 		res += "\r\n";
 	return res;
+}
+
+void Response::setCgiState(int state)
+{
+	_cgi_state = state;
+}
+
+int Response::getCgiState()
+{
+	return (_cgi_state);
+}
+
+// int Response::handleCgiTemp(std::string &location_key)
+// {
+
+// 	// DEBUGGING STARTS
+// 	std::cout << "handleCgiTemp() called" << std::endl;
+// 	// DEBUGGING ENDS
+
+// 	const std::string path = this->_req.getPath();
+// 	_cgi_obj.clear();
+// 	_cgi_obj.setCgiPath(path);
+// 	_cgi_state = 1;
+// 	if (pipe(_cgi_fd) < 0)
+// 	{
+// 		statusCode = 500;
+// 		return (1);
+// 	}
+// 	_cgi_obj.initEnvCgi(_req, _server_conf.getLocationKey(location_key)); // + URI
+// 	_cgi_obj.execute(statusCode);
+// 	return (0);
+// }
+
+// static bool isAllowedMethod(REQ_METHOD &method, Location &loc, short &code)
+// {
+// 	std::vector<bool> methods = loc.getMethods();
+// 	if ((method == GET && !methods[0]) || (method == POST && !methods[1]) ||
+// 		(method == DELETE && !methods[2]))
+// 	{
+// 		code = 405;
+// 		return (1);
+// 	}
+// 	return (0);
+// }
+
+/* check a file for CGI (the extension is supported, the file exists and is executable) and run the CGI */
+int Response::handleCgi(Location location)
+{
+	std::string path;
+	std::string exten;
+	size_t pos;
+
+	// DEBUGGING STARTS
+	std::cout << "handleCgi() called" << std::endl;
+	// DEBUGGING ENDS
+
+	path = this->_req.getPath();
+	if (path[0] && path[0] == '/')
+		path.erase(0, 1);
+	// if (path == "cgi-bin")
+	// 	path += "/" + _server_conf.getLocationKey(location_key)->getIndexLocation();
+	// else if (path == "cgi-bin/")
+	// 	path.append(_server_conf.getLocationKey(location_key)->getIndexLocation());
+
+	// DEBUGGING STARTS
+	std::cout << "path: " << path << std::endl;
+	// DEBUGGING ENDS
+	path = _path;
+	pos = path.find(".");
+	if (pos == std::string::npos)
+	{
+		statusCode = 501;
+		return (1);
+	}
+	exten = path.substr(pos);
+	if (exten != ".py" && exten != ".sh")
+	{
+		statusCode = 501;
+		return (1);
+	}
+	if (ConfParser::getTypePath(path) != 1)
+	{
+		statusCode = 404;
+		return (1);
+	}
+	// if (ConfParser::checkFile(path, 1) == -1 || ConfParser::checkFile(path, 3) == -1)
+	// {
+	// 	statusCode = 403;
+	// 	return (1);
+	// }
+	// if (isAllowedMethod(_req.getMethod(), *_server_conf.getLocationKey(location_key), statusCode))
+	// 	return (1);
+	_cgi_obj.clear();
+	_cgi_obj.setCgiPath(path);
+	_cgi_state = 1;
+	if (pipe(_cgi_fd) < 0)
+	{
+		statusCode = 500;
+		return (1);
+	}
+	_cgi_obj.initEnv(_req, location); // + URI
+	_cgi_obj.execute(statusCode);
+	// DEBUGGING STARTS
+	std::cout << BLUE_BOLD << "CGI FINISH EXECUTE <status code: " << statusCode << ">" << std::endl;
+	// DEBUGGING ENDS
+	_response = _cgi_obj.getResponse();
+	// DEBUGGING STARTS
+	std::cout << "response: " << _response << std::endl;
+	// DEBUGGING ENDS
+	return (0);
 }

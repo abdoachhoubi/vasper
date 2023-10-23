@@ -173,8 +173,8 @@ void ConfParser::createServer(std::string &config, Server &server)
 	// 	throw std::runtime_error("Error: Index from config file not found 1");
 	// if (Server::isReadableAndExist(server.getRoot(), "") < 0)
 	// 	throw std::runtime_error("Error: Root from config file not found 2");
-	// if (!server.checkLocaitons())
-	// 	throw std::runtime_error("Error: in Location from config file");
+	if (!server.checkLocaitons())
+		throw std::runtime_error("Error: in Location from config file");
 	if (!server.isValidErrorPages())
 		throw std::runtime_error("Error: in ErrorPages from config file");
 }
@@ -243,4 +243,31 @@ int ConfParser::print()
 		}
 	}
 	return 0;
+}
+
+
+/* define is path is file(1), folder(2) or something else(3) */
+int ConfParser::getTypePath(std::string const path)
+{
+	struct stat	buffer;
+	int			result;
+	
+	result = stat(path.c_str(), &buffer);
+	if (result == 0)
+	{
+		if (buffer.st_mode & S_IFREG)
+			return (1);
+		else if (buffer.st_mode & S_IFDIR)
+			return (2);
+		else
+			return (3);
+	}
+	else
+		return (-1);
+}
+
+/* checks is the file exists and accessable */
+int	ConfParser::checkFile(std::string const path, int mode)
+{
+	return (access(path.c_str(), mode));
 }

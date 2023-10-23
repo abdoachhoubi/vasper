@@ -1,6 +1,7 @@
 #include "../../includes/main.hpp"
 
-Location::Location() {
+Location::Location()
+{
 	path = "";
 	root = "";
 	autoindex = false;
@@ -11,14 +12,18 @@ Location::Location() {
 	cgi_path = std::vector<std::string>();
 	cgi_extension = std::vector<std::string>();
 	clientMaxBodySize = MAX_CONTENT_LENGTH;
+	_ext_path = std::map<std::string, std::string>();
 }
 
-Location::Location(const Location &other) {
+Location::Location(const Location &other)
+{
 	*this = other;
 }
 
-Location &Location::operator=(const Location &rhs) {
-	if (this != &rhs) {
+Location &Location::operator=(const Location &rhs)
+{
+	if (this != &rhs)
+	{
 		path = rhs.path;
 		root = rhs.root;
 		autoindex = rhs.autoindex;
@@ -30,6 +35,7 @@ Location &Location::operator=(const Location &rhs) {
 		cgi_path = rhs.cgi_path;
 		cgi_extension = rhs.cgi_extension;
 		clientMaxBodySize = rhs.clientMaxBodySize;
+		_ext_path = rhs._ext_path;
 	}
 	return (*this);
 }
@@ -37,10 +43,12 @@ Location &Location::operator=(const Location &rhs) {
 Location::~Location() {}
 
 // setters
-void Location::setMethods(std::vector<std::string> methods) {
+void Location::setMethods(std::vector<std::string> methods)
+{
 	allowed_methods = methods;
 	_methods = std::vector<bool>(3, false);
-	for (size_t i = 0; i < methods.size(); i++) {
+	for (size_t i = 0; i < methods.size(); i++)
+	{
 		if (methods[i] == "GET")
 			_methods[0] = true;
 		else if (methods[i] == "POST")
@@ -62,7 +70,8 @@ std::vector<std::string> Location::getAllowedMethods() const
 	return (allowed_methods);
 }
 
-void Location::setAutoindex(std::string parametr) {
+void Location::setAutoindex(std::string parametr)
+{
 	if (parametr == "on")
 		autoindex = true;
 	else if (parametr == "off")
@@ -85,7 +94,8 @@ void Location::setCgiPath(std::vector<std::string> path) { cgi_path = path; }
 
 void Location::setCgiExtension(std::vector<std::string> extension) { cgi_extension = extension; }
 
-void Location::setMaxBodySize(std::string parametr) {
+void Location::setMaxBodySize(std::string parametr)
+{
 	std::istringstream iss(parametr);
 	iss >> clientMaxBodySize;
 }
@@ -111,9 +121,15 @@ const std::vector<std::string> &Location::getCgiPath() const { return (cgi_path)
 
 const std::vector<std::string> &Location::getCgiExtension() const { return (cgi_extension); }
 
+const std::map<std::string, std::string> &Location::getExtensionPath() const
+{
+	return (this->_ext_path);
+}
+
 const unsigned long &Location::getMaxBodySize() const { return (clientMaxBodySize); }
 
-std::string Location::getPrintMethods() const {
+std::string Location::getPrintMethods() const
+{
 	std::string result = "";
 	if (_methods[0])
 		result += "GET ";

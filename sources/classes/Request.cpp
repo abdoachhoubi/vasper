@@ -625,7 +625,7 @@ short  Request::getErrorCode()
 	return (_error_code);
 }
 
-HttpMethod  &Request::getMethod()
+REQ_METHOD  &Request::getMethod()
 {
     return (_method);
 }
@@ -707,7 +707,7 @@ std::vector<u_int8_t> &Request::getBodyVector()
 	return (_body);
 }
 
-void    Request::setMethod(HttpMethod & method)
+void    Request::setMethod(REQ_METHOD & method)
 {
     _method = method;
 }

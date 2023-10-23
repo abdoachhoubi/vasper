@@ -46,7 +46,7 @@ class Request
         Request();
         ~Request();
 
-        HttpMethod                                  &getMethod();
+        REQ_METHOD                                  &getMethod();
         std::string                                 &getPath();
         std::string                                 &getQuery();
         std::string                                 &getFragment();
@@ -62,7 +62,7 @@ class Request
 		short                                       getErrorCode();
 		std::vector<u_int8_t>						&getBodyVector();
         
-        void        setMethod(HttpMethod &);
+        void        setMethod(REQ_METHOD &);
         void        setHeader(std::string &, std::string &);
         void        setMaxBodySize(size_t);
         void        setBody(std::string name);
@@ -83,7 +83,7 @@ class Request
         std::map<std::string, std::string>  _request_headers;
         std::vector<u_int8_t>               _body;
         std::string                         _boundary;
-        HttpMethod                          _method;
+        REQ_METHOD                          _method;
         std::map<u_int8_t, std::string>     _method_str;
         ParsingState                        _state;
         size_t                              _max_body_size;

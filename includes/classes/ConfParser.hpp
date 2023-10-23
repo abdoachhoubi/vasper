@@ -17,6 +17,9 @@ class ConfParser {
 		std::vector<Server>		getServers();
 		int						print();
 
+		static int getTypePath(std::string const path);
+		static int checkFile(std::string const path, int mode);
+
 	private:
 		std::vector<Server>			servers;
 		std::vector<std::string>	serv_conf;

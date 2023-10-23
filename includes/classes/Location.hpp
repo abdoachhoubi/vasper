@@ -37,6 +37,8 @@ class Location
 		void setCgiExtension(std::vector<std::string> extension);
 		const std::vector<std::string> &getCgiExtension() const;
 
+		const std::map<std::string, std::string> &getExtensionPath() const;
+
 		void setMaxBodySize(std::string parametr);
 		const unsigned long &getMaxBodySize() const;
 
@@ -44,6 +46,8 @@ class Location
 
 		void setAllowedMethods(std::vector<std::string> methods);
 		std::vector<std::string> getAllowedMethods() const;
+
+		std::map<std::string, std::string> _ext_path;
 
 	private:
 		std::string					path;

@@ -59,7 +59,7 @@
 #define TEMP_ROOT_PATH "/home/astro/Desktop/webserv_enhanced"
 
 
-enum HttpMethod
+enum REQ_METHOD
 {
     GET,
     POST,
@@ -72,8 +72,8 @@ enum HttpMethod
 #include "classes/ConfParser.hpp"
 #include "classes/Server.hpp"
 #include "classes/Location.hpp"
-#include "classes/Multiplexer.hpp"
 #include "classes/Request.hpp"
+#include "classes/Cgi.hpp"
+#include "classes/Multiplexer.hpp"
 #include "classes/Response.hpp"
 #include "classes/Client.hpp"
-#include "classes/Cgi.hpp"
