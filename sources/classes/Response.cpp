@@ -259,16 +259,16 @@ int Response::getController(Location location)
 	{
 		// CGI STARTS HERE
 		std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-		if (file_extension == "py" || file_extension == "sh")
+		if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
 		{
 			_cgi_state = 1;
 			handleCgi(location);
-			std::cout << "status code: " << statusCode << std::endl;
-			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-			res += "Content-Type: text/html\r\n";
-			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-			res += "\r\n";
-			res += _response;
+			// std::cout << "status code: " << statusCode << std::endl;
+			// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+			// res += "Content-Type: text/html\r\n";
+			// res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+			// res += "\r\n";
+			std::string res = _response;
 			set_headers(res);
 			return 0;
 		}
@@ -322,14 +322,14 @@ int Response::postController(Location location)
 {
 	// CGI STARTS HERE
 	std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-	if (file_extension == "py" || file_extension == "sh")
+	if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
 	{
 		handleCgi(location);
-		std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-		res += "Content-Type: text/html\r\n";
-		res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-		res += "\r\n";
-		res += _response;
+		// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+		// res += "Content-Type: text/html\r\n";
+		// res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+		// res += "\r\n";
+		std::string res = _response;
 		set_headers(res);
 		return 0;
 	}

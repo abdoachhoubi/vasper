@@ -161,7 +161,7 @@ bool Server::isValidErrorPages()
 int Server::isValidLocation(Location &location) const
 {
 	// TODO: CHANGE CONDITION
-	if (location.getPath() == "/")
+	if (location.getCGI())
 	{
 		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
 			return (0);
@@ -177,7 +177,7 @@ int Server::isValidLocation(Location &location) const
 		for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
 		{
 			std::string tmp = *it;
-			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh")
+			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh" )
 				return (0);
 			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
 			{
