@@ -17,7 +17,8 @@ void ConfParser::parse(const std::string &config_file)
 		createServer(serv_conf[i], server);
 		servers.push_back(server);
 	}
-
+	if (servers.empty())
+		throw std::runtime_error("Error: Server config file is not well formated 10");
 	for (size_t i = 0; i < servers.size(); i++)
 	{
 		for (size_t j = i + 1; j < servers.size(); j++)
@@ -121,18 +122,18 @@ void ConfParser::createServer(std::string &config, Server &server)
 			}
 			else if (key == "location")
 			{
-				if (value.size() < 2)
+				if (value.size() != 2)
 					throw std::runtime_error("Error: Server config file is not well formated 6");
 				std::string name = value[0];
 				if (value[1] != "{")
 					throw std::runtime_error("Error: Server config file is not well formated 7");
 				std::vector<std::string> location;
-				while (i < line.size() && str_trim(line[i]) != "}")
+				while (i < line.size() && strtrim(line[i]) != "}")
 				{
 					Server::checkToken(line[i]);
 					location.push_back(line[i++]);
 				}
-				if (str_trim(line[i]) != "}")
+				if (strtrim(line[i]) != "}")
 					throw std::runtime_error("Error: Server config file is not well formated 8");
 				server.setLocation(name, location);
 			}

@@ -90,3 +90,4 @@ class Server
 		int									listenFd;
 		std::string							_uploadPath;
 };
+
