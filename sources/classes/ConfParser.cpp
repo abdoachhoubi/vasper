@@ -20,22 +20,18 @@ void ConfParser::parse(const std::string &config_file)
 	if (servers.empty())
 		throw std::runtime_error("Error: Server config file is not well formated 10");
 	for (size_t i = 0; i < servers.size(); i++)
-	{
-		for (size_t j = i + 1; j < servers.size();)
-		{
+		for (size_t j = i + 1; j < servers.size(); j++)
 			if (servers[i].getPort() == servers[j].getPort() && servers[i].getHost() == servers[j].getHost() && servers[i].getServerName() == servers[j].getServerName())
-			{
-				
 				throw std::runtime_error("Error: Server config file is not well formated 11");
-			}
-			else if (servers[i].getPort() == servers[j].getPort() && servers[i].getHost() == servers[j].getHost())
-			{
+
+	for (size_t i = 0; i < servers.size(); i++)
+		for (size_t j = i + 1; j < servers.size();) {
+			if (servers[i].getPort() == servers[j].getPort() && servers[i].getHost() == servers[j].getHost())
 				servers.erase(servers.begin() + j);
-			}
 			else
 				j++;
 		}
-	}
+
 	nbr_serv = servers.size();
 	std::cout << "nb serv: " << nbr_serv  << " size " << servers.size() << std::endl;
 }
