@@ -216,7 +216,7 @@ std::string strtrim(const std::string &input)
 	{
 		start++;
 	}
-
+ 
 	// Find the position of the first non-white space character from the end
 	while (end >= start && std::isspace(input[end]))
 	{

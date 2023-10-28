@@ -18,4 +18,5 @@ char fromHexToDec(std::string hex);
 std::vector<std::string> ft_split(const std::string& s);
 std::vector<std::string> splitParametrs(std::string line, std::string sep);
 std::vector<std::string> generateSubUris(const std::string &input);
-std::string str_trim(std::string src);
+// std::string str_trim(std::string src);
+std::string strtrim(const std::string &input);
