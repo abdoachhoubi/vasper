@@ -265,7 +265,7 @@ void Multiplexer::sendCgiBody(Client &client, Cgi &cgi)
 		removeFromSet(cgi.pipe_in[1], _write_fds);
 		close(cgi.pipe_in[1]);
 		close(cgi.pipe_out[1]);
-		client.response.generateErrorResponse(500);
+		client.response.generateErrorResponse(INTERNAL_SERVER_ERROR, client.server);
 	}
 	else if (bytes_sent == 0 || (size_t)bytes_sent == req_body.length())
 	{
@@ -296,11 +296,11 @@ void Multiplexer::readCgiResponse(Client &client, Cgi &cgi)
 		waitpid(cgi.getCgiPid(), &status, 0);
 		if (WEXITSTATUS(status) != 0)
 		{
-			client.response.generateErrorResponse(502);
+			client.response.generateErrorResponse(BAD_GATEWAY, client.server);
 		}
 		client.response.setCgiState(2);
 		if (client.response._response.find("HTTP/1.1") == std::string::npos)
-			client.response._response.insert(0, "HTTP/1.1 200 OK\r\n");
+			client.response._response.insert(0, "HTTP/1.1 SUCCESS OK\r\n");
 		return;
 	}
 	else if (bytes_read < 0)
@@ -310,7 +310,7 @@ void Multiplexer::readCgiResponse(Client &client, Cgi &cgi)
 		close(cgi.pipe_in[0]);
 		close(cgi.pipe_out[0]);
 		client.response.setCgiState(2);
-		client.response.generateErrorResponse(500);
+		client.response.generateErrorResponse(INTERNAL_SERVER_ERROR, client.server);
 		return;
 	}
 	else

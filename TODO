@@ -1,7 +1,1 @@
-location /{ {
-client_max_body_size 10 (semicolon)
-
 Default error pages;
-
-index: error in opening the file
-file exist 403 500

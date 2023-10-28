@@ -48,7 +48,7 @@ public:
 	int myFind(std::string src, std::string target);
 	std::string decodePath(std::string path);
 	std::string statusTextGen(int code);
-	std::string generateErrorResponse(int code);
+	std::string generateErrorResponse(error_pages code, Server server);
 
 	// Controllers
 	int getController(Location location);

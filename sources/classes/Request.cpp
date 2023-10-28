@@ -117,7 +117,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Method not implemented
-                    _error_code = 501;
+                    _error_code = NOT_IMPLEMENTED;
                     return ;
                 }
                 _state = Request_Line_Method;
@@ -130,7 +130,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Method not implemented
-                    _error_code = 501;
+                    _error_code = NOT_IMPLEMENTED;
                     return ;
                 }
 
@@ -143,7 +143,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != ' ')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_URI_Path_Slash;
@@ -159,7 +159,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 break ;
@@ -190,7 +190,7 @@ void    Request::parse(char *data, size_t size)
                 else if (!allowedCharURI(character))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 else if ( i > MAX_URI_LENGTH)
@@ -220,7 +220,7 @@ void    Request::parse(char *data, size_t size)
                 else if (!allowedCharURI(character))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 else if ( i > MAX_URI_LENGTH)
@@ -243,7 +243,7 @@ void    Request::parse(char *data, size_t size)
                 else if (!allowedCharURI(character))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 else if ( i > MAX_URI_LENGTH)
@@ -259,13 +259,13 @@ void    Request::parse(char *data, size_t size)
                 if (checkUriPos(_path))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 if (character != 'H')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_HT;
@@ -276,7 +276,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != 'T')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_HTT;
@@ -287,7 +287,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != 'T')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_HTTP;
@@ -298,7 +298,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != 'P')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_HTTP_Slash;
@@ -309,7 +309,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != '/')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_Major;
@@ -320,7 +320,7 @@ void    Request::parse(char *data, size_t size)
                 if (!isdigit(character))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _ver_major = character;
@@ -333,7 +333,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != '.')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_Minor;
@@ -344,7 +344,7 @@ void    Request::parse(char *data, size_t size)
                 if (!isdigit(character))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _ver_minor = character;
@@ -356,7 +356,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != '\r')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Request_Line_LF;
@@ -367,7 +367,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != '\n')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Field_Name_Start;
@@ -383,7 +383,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 break ;
@@ -414,7 +414,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 break ;
@@ -431,7 +431,7 @@ void    Request::parse(char *data, size_t size)
                 else if (!isToken(character))
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 break ;
@@ -458,7 +458,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 break ;
@@ -468,7 +468,7 @@ void    Request::parse(char *data, size_t size)
                 if (isxdigit(character) == 0)
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 s.str("");
@@ -506,7 +506,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 continue ;
@@ -523,7 +523,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 continue ;
@@ -549,7 +549,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 continue ;
@@ -561,7 +561,7 @@ void    Request::parse(char *data, size_t size)
                 else
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 continue ;
@@ -571,7 +571,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != '\r')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _state = Chunked_End_LF;
@@ -583,7 +583,7 @@ void    Request::parse(char *data, size_t size)
                 if (character != '\n')
                 {
 					// Bad request
-                    _error_code = 400;
+                    _error_code = BAD_REQUEST;
                     return ;
                 }
                 _body_done_flag = true;

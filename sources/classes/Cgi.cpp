@@ -117,7 +117,7 @@ void Cgi::initEnvCgi(Request &req, Location &location)
 	this->_env["SERVER_PORT"] = "3000";
 	this->_env["REQUEST_METHOD"] = req.getMethodStr();
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->_env["REDIRECT_STATUS"] = "200";
+	this->_env["REDIRECT_STATUS"] = "SUCCESS";
 	this->_env["SERVER_SOFTWARE"] = "vasper";
 
 	std::map<std::string, std::string> request_headers = req.getHeaders();
@@ -174,7 +174,7 @@ void Cgi::initEnv(Request &req, Location &location)
 	this->_env["DOCUMENT_ROOT"] = location.getRootLocation();
 	this->_env["REQUEST_URI"] = req.getPath() + req.getQuery();
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->_env["REDIRECT_STATUS"] = "200";
+	this->_env["REDIRECT_STATUS"] = "SUCCESS";
 	this->_env["SERVER_SOFTWARE"] = "vasper";
 
 	this->_ch_env = (char **)calloc(sizeof(char *), this->_env.size() + 1);
@@ -195,13 +195,13 @@ void Cgi::execute(short &error_code)
 {
 	if (this->_argv[0] == NULL || this->_argv[1] == NULL)
 	{
-		error_code = 500;
+		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
 	if (pipe(pipe_in) < 0)
 	{
 		std::cerr << RED_BOLD << "pipe() failed" << RESET << std::endl;
-		error_code = 500;
+		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
 	if (pipe(pipe_out) < 0)
@@ -210,7 +210,7 @@ void Cgi::execute(short &error_code)
 
 		close(pipe_in[0]);
 		close(pipe_in[1]);
-		error_code = 500;
+		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
 	this->_cgi_pid = fork();
@@ -231,7 +231,7 @@ void Cgi::execute(short &error_code)
 	else
 	{
 		std::cout << "Fork failed" << std::endl;
-		error_code = 500;
+		error_code = INTERNAL_SERVER_ERROR;
 	}
 }
 

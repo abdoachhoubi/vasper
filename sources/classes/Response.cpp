@@ -4,13 +4,13 @@
 
 Response::Response()
 {
-	statusCode = 200;
+	statusCode = SUCCESS;
 	_cgi_state = 0;
 };
 Response::Response(Request &req, Server server) : _req(req), _server_conf(server)
 {
 	contentType = getContentTypeFromExtension(req.getPath());
-	statusCode = 200;
+	statusCode = SUCCESS;
 	_cgi_state = 0;
 }
 void Response::setServer(Server server) { _server_conf = server; }
@@ -56,19 +56,24 @@ std::string Response::generateResponse(std::string fullPath, int flag, Location 
 			fullPath += _server_conf.getIndex();
 		contentType = "text/html";
 	}
+	if (!fileExists(fullPath))
+	{
+		std::cout << "file not exist " << std::endl;
+		set_headers(generateErrorResponse(FORBIDDEN, _server_conf));
+		return _headers;
+	}
 	std::ifstream file(fullPath.c_str(), std::ios::binary | std::ios::ate);
 	if (!file)
 	{
-		std::cout << "error in openiing the file " << std::endl;
-		set_headers(generateErrorResponse(500));
-		std::cout <<"the headers are : " << _response << std::endl;
+		std::cout << "error in opening the file " << std::endl;
+		set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
 		return _headers;
 	}
 	_path = fullPath;
 	fileSize = file.tellg();
 	if (fileSize > (long long)_server_conf.getClientMaxBodySize())
 	{
-		set_headers(generateErrorResponse(413));
+		set_headers(generateErrorResponse(REQUEST_ENTITY_TOO_LARGE, _server_conf));
 		return _headers;
 	}
 	contentType = getContentTypeFromExtension(fullPath);
@@ -139,8 +144,8 @@ bool Response::deleteResource(const std::string &resourcePath)
 
 bool Response::fileExists(const std::string &f)
 {
-	std::ifstream file(f.c_str());
-	return (file.good());
+	struct stat buffer;
+	return (stat(f.c_str(), &buffer) == 0);
 }
 
 // saveDataToFile
@@ -304,7 +309,7 @@ int Response::getController(Location location)
 				std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
 				if (response_body.size() > _server_conf.getClientMaxBodySize())
 				{
-					set_headers(generateErrorResponse(413));
+					set_headers(generateErrorResponse(REQUEST_ENTITY_TOO_LARGE, _server_conf));
 					return 0;
 				}
 				std::string response = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
@@ -317,14 +322,14 @@ int Response::getController(Location location)
 			}
 			else
 			{
-				set_headers(generateErrorResponse(403));
+				set_headers(generateErrorResponse(FORBIDDEN, _server_conf));
 				return 0;
 			}
 		}
 	}
 	else
 	{
-		set_headers(generateErrorResponse(404));
+		set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
 		return 0;
 	}
 }
@@ -333,7 +338,7 @@ int Response::postController(Location location)
 {
 	if (_req.getBody().size() > _server_conf.getClientMaxBodySize())
 	{
-		set_headers(generateErrorResponse(413));
+		set_headers(generateErrorResponse(REQUEST_ENTITY_TOO_LARGE, _server_conf));
 		return 0;
 	}
 	// CGI STARTS HERE
@@ -353,13 +358,13 @@ int Response::postController(Location location)
 	std::string _target_file = location.getRootLocation() + _req.getPath();
 	if (fileExists(_target_file))
 	{
-		set_headers(generateErrorResponse(204));
+		set_headers(generateErrorResponse(NO_CONTENT, _server_conf));
 		return 0;
 	}
 	std::ofstream file(_target_file.c_str(), std::ios::binary);
 	if (file.fail())
 	{
-		set_headers(generateErrorResponse(500));
+		set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
 		return 0;
 	}
 	if (_req.getMultiformFlag())
@@ -367,13 +372,13 @@ int Response::postController(Location location)
 		std::string body = _req.getBody();
 		body = parseBoundary(body, _req.getBoundary());
 		file.write(body.c_str(), body.length());
-		set_headers(generateErrorResponse(200));
+		set_headers(generateErrorResponse(SUCCESS, _server_conf));
 		return 0;
 	}
 	else
 	{
 		file.write(_req.getBody().c_str(), _req.getBody().length());
-		set_headers(generateErrorResponse(200));
+		set_headers(generateErrorResponse(SUCCESS, _server_conf));
 		return 0;
 	}
 }
@@ -387,7 +392,7 @@ int Response::deleteController(Location location)
 		if (deleteResource(resourcePath))
 		{
 			// Resource deleted successfully
-			std::string res = "HTTP/1.1 200 OK\r\n";
+			std::string res = "HTTP/1.1 SUCCESS OK\r\n";
 			res += "Server: AstroServer\r\n";
 			res += "Content-Length: 0\r\n";
 			res += "Content-Type: application/json\r\n";
@@ -397,18 +402,18 @@ int Response::deleteController(Location location)
 		}
 		else
 		{
-			set_headers(generateErrorResponse(500));
+			set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
 			return 0;
 		}
 	}
 	else if (gettype() == "FOLDER")
 	{
-		set_headers(generateErrorResponse(403));
+		set_headers(generateErrorResponse(FORBIDDEN, _server_conf));
 		return (0);
 	}
 	else
 	{
-		std::string res = "HTTP/1.1 404 Not Found\r\n";
+		std::string res = "HTTP/1.1 NOT_FOUND Not Found\r\n";
 		res += "Content-Length: 0\r\n";
 		res += "Content-Type: application/json\r\n";
 		res += "\r\n";
@@ -436,50 +441,58 @@ int Response::respond()
 	std::vector<Location> loc = _server_conf.getLocations();
 
 	// ! REDIRECTIONS
-	// std::vector<Location>::iterator itx;
+	std::vector<Location>::iterator itx;
 	std::vector<std::string> sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
 	bool flag = true;
-	// for (size_t i = 0; i < sub_uris.size(); ++i)
-	// {
-	// 	if (!flag)
-	// 		break;
-	// 	for (itx = loc.begin(); itx != loc.end(); ++itx)
-	// 	{
-	// 		if (!flag)
-	// 			break;
-	// 		std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
-	// 		if (sub_uri == "")
-	// 			sub_uri = "/";
-	// 		if (itx->getPath() == sub_uri)
-	// 		{
-	// 			flag = false;
-	// 			bool redir = false;
-	// 			if (!itx->getReturn().empty())
-	// 			{
-	// 				std::vector<Location>::iterator ity;
-	// 				for (ity = loc.begin(); ity != loc.end(); ++ity)
-	// 				{
-	// 					if (ity->getPath() == itx->getReturn())
-	// 					{
-	// 						statusCode = 302;
-	// 						loc_path = ity->getPath();
-	// 						_req.setPath(loc_path);
-	// 						redir = true;
-	// 						return (respond());
-	// 					}
-	// 				}
-	// 			}
-	// 			else
-	// 				redir = true;
-	// 			if (!redir)
-	// 			{
-	// 				set_headers(generateErrorResponse(301));
-	// 				return (0);
-	// 			}
-	// 		}
-	// 	}
-	// }
+	for (size_t i = 0; i < sub_uris.size(); ++i)
+	{
+		if (!flag)
+			break;
+		for (itx = loc.begin(); itx != loc.end(); ++itx)
+		{
+			if (!flag)
+				break;
+			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
+			if (sub_uri == "")
+				sub_uri = "/";
+			if (itx->getPath() == sub_uri)
+			{
+				flag = false;
+				bool redir = false;
+				if (!itx->getReturn().empty())
+				{
+					std::vector<Location>::iterator ity;
+					for (ity = loc.begin(); ity != loc.end(); ++ity)
+					{
+						if (ity->getPath() == itx->getReturn())
+						{
+							statusCode = 302;
+							loc_path = ity->getPath();
+							_req.setPath(loc_path);
+							redir = true;
+							// creating redirection response
+							std::string res = "HTTP/1.1 " + to_string(statusCode) + " Found\r\n";
+							res += "Server: " + _server_conf.getServerName() + "\r\n";
+							res += "Location: " + ity->getPath() + "\r\n";
+							res += "Content-Length: 0\r\n";
+							res += "Content-Type: application/json\r\n";
+							res += "\r\n";
+							set_headers(res);
+							return (0);
+						}
+					}
+				}
+				else
+					redir = true;
+				if (!redir)
+				{
+					set_headers(generateErrorResponse(MOVED_PERMANENTLY, _server_conf));
+					return (0);
+				}
+			}
+		}
+	}
 
 	sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
@@ -519,7 +532,7 @@ int Response::respond()
 				isResourceFound(_path);
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
 				{
-					set_headers(generateErrorResponse(405));
+					set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
 					return (0);
 				}
 				if (_req.getMethodStr() == "GET")
@@ -530,13 +543,13 @@ int Response::respond()
 					return (postController(*it));
 				else
 				{
-					set_headers(generateErrorResponse(405));
+					set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
 					return (0);
 				}
 			}
 		}
 	}
-	set_headers(generateErrorResponse(405));
+	set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
 	return (0);
 }
 
@@ -624,7 +637,7 @@ std::string Response::statusTextGen(int code)
 		return "Continue";
 	case 101:
 		return "Switching Protocols";
-	case 200:
+	case SUCCESS:
 		return "OK";
 	case 201:
 		return "Created";
@@ -632,7 +645,7 @@ std::string Response::statusTextGen(int code)
 		return "Accepted";
 	case 203:
 		return "Non-Authoritative Information";
-	case 204:
+	case NO_CONTENT:
 		return "No Content";
 	case 205:
 		return "Reset Content";
@@ -640,7 +653,7 @@ std::string Response::statusTextGen(int code)
 		return "Partial Content";
 	case 300:
 		return "Multiple Choices";
-	case 301:
+	case MOVED_PERMANENTLY:
 		return "Moved Permanently";
 	case 302:
 		return "Found";
@@ -652,17 +665,17 @@ std::string Response::statusTextGen(int code)
 		return "Use Proxy";
 	case 307:
 		return "Temporary Redirect";
-	case 400:
+	case BAD_REQUEST:
 		return "Bad Request";
 	case 401:
 		return "Unauthorized";
 	case 402:
 		return "Payment Required";
-	case 403:
+	case FORBIDDEN:
 		return "Forbidden";
-	case 404:
+	case NOT_FOUND:
 		return "Not Found";
-	case 405:
+	case METHOD_NOT_ALLOWED:
 		return "Method Not Allowed";
 	case 406:
 		return "Not Acceptable";
@@ -678,7 +691,7 @@ std::string Response::statusTextGen(int code)
 		return "Length Required";
 	case 412:
 		return "Precondition Failed";
-	case 413:
+	case REQUEST_ENTITY_TOO_LARGE:
 		return "Payload Too Large";
 	case 414:
 		return "URI Too Long";
@@ -688,25 +701,52 @@ std::string Response::statusTextGen(int code)
 		return "Range Not Satisfiable";
 	case 417:
 		return "Expectation Failed";
-	case 500:
+	case INTERNAL_SERVER_ERROR:
 		return "Internal Server Error";
-	case 501:
+	case NOT_IMPLEMENTED:
 		return "Not Implemented";
-	case 502:
+	case BAD_GATEWAY:
 		return "Bad Gateway";
-	case 503:
+	case SERVICE_UNAVAILABLE:
 		return "Service Unavailable";
-	case 504:
+	case GATEWAY_TIMEOUT:
 		return "Gateway Timeout";
-	case 505:
+	case HTTP_VERSION_NOT_SUPPORTED:
 		return "HTTP Version Not Supported";
 	default:
 		return "Unknown Status";
 	}
 }
 
-std::string Response::generateErrorResponse(int code)
+std::string Response::generateErrorResponse(error_pages code, Server server)
 {
+
+	std::map<error_pages, std::string> err_pages = server.getErrorPages();
+	// DEBUGGING STARTS
+	std::cout << RED_BOLD << "GENERATING ERROR RESPONSE" << RESET << std::endl;
+	std::cout << err_pages[code] << std::endl;
+	// DEBUGGING ENDS
+	if (err_pages[code] != "")
+	{
+		std::string path_to_error_page = server.getRoot() + "/" + err_pages[code];
+		std::ifstream file(path_to_error_page.c_str(), std::ios::binary);
+		if (!file)
+		{
+			std::cout << "error in opening the file " << std::endl;
+			return (generateErrorResponse(INTERNAL_SERVER_ERROR, server));
+		}
+		std::string body;
+		std::string line;
+		while (getline(file, line))
+			body += line + "\n";
+		file.close();
+		std::string res = "HTTP/1.1 " + to_string(code) + " " + statusTextGen(code) + "\r\n";
+		res += "Content-Type: text/html\r\n";
+		res += "Content-Length: " + to_string(body.length()) + "\r\n";
+		res += "\r\n";
+		res += body;
+		return res;
+	}
 	// TODO: CHANGE FLAG
 	bool flag = true;
 	std::string code_string = to_string(code);
@@ -773,7 +813,7 @@ int Response::getCgiState()
 // 	_cgi_state = 1;
 // 	if (pipe(_cgi_fd) < 0)
 // 	{
-// 		statusCode = 500;
+// 		statusCode = INTERNAL_SERVER_ERROR;
 // 		return (1);
 // 	}
 // 	_cgi_obj.initEnvCgi(_req, _server_conf.getLocationKey(location_key)); // + URI
@@ -787,7 +827,7 @@ int Response::getCgiState()
 // 	if ((method == GET && !methods[0]) || (method == POST && !methods[1]) ||
 // 		(method == DELETE && !methods[2]))
 // 	{
-// 		code = 405;
+// 		code = METHOD_NOT_ALLOWED;
 // 		return (1);
 // 	}
 // 	return (0);
@@ -812,23 +852,23 @@ int Response::handleCgi(Location location)
 	pos = path.find(".");
 	if (pos == std::string::npos)
 	{
-		statusCode = 501;
+		statusCode = NOT_IMPLEMENTED;
 		return (1);
 	}
 	exten = path.substr(pos);
 	if (exten != ".php" && exten != ".sh")
 	{
-		statusCode = 501;
+		statusCode = NOT_IMPLEMENTED;
 		return (1);
 	}
 	if (ConfParser::getTypePath(path) != 1)
 	{
-		statusCode = 404;
+		statusCode = NOT_FOUND;
 		return (1);
 	}
 	// if (ConfParser::checkFile(path, 1) == -1 || ConfParser::checkFile(path, 3) == -1)
 	// {
-	// 	statusCode = 403;
+	// 	statusCode = FORBIDDEN;
 	// 	return (1);
 	// }
 	// if (isAllowedMethod(_req.getMethod(), *_server_conf.getLocationKey(location_key), statusCode))
@@ -838,7 +878,7 @@ int Response::handleCgi(Location location)
 	_cgi_state = 1;
 	if (pipe(_cgi_fd) < 0)
 	{
-		statusCode = 500;
+		statusCode = INTERNAL_SERVER_ERROR;
 		return (1);
 	}
 	_cgi_obj.initEnv(_req, location); // + URI
