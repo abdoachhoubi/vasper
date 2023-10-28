@@ -17,7 +17,7 @@ public:
 	Response();
 	void set_headers(std::string headers);
 	bool isResourceFound(const std::string &fullPath);
-	std::string generateResponse(std::string fullPath, int flag, Server server);
+	std::string generateResponse(std::string fullPath, int flag, Location location);
 	void setServer(Server server);
 	void set_response(std::string response);
 	std::string get_response();

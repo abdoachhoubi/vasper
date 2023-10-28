@@ -24,10 +24,6 @@ const std::map<error_pages, std::string> &Server::getErrorPages() { return _erro
 
 Server::Server()
 {
-	setRoot("/");
-	setListen("80");
-	setHost("localhost");
-	setIndex("index.html");
 }
 
 Server &Server::operator=(const Server &other)
@@ -297,7 +293,6 @@ int Server::isReadableAndExist(std::string const path, std::string const index)
 {
 	int type;
 	std::string path_p = path + "/" + index;
-
 	type = getTypePath(path_p);
 	if (type == -1)
 		return -1;

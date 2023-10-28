@@ -17,7 +17,8 @@ void ConfParser::parse(const std::string &config_file)
 		createServer(serv_conf[i], server);
 		servers.push_back(server);
 	}
-
+	if (servers.empty())
+		throw std::runtime_error("Error: Server config file is not well formated 10");
 	for (size_t i = 0; i < servers.size(); i++)
 	{
 		for (size_t j = i + 1; j < servers.size(); j++)
