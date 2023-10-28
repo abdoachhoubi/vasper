@@ -1,10 +1,7 @@
 #!/usr/bin/python3
 
 import datetime
-import cgi
 
-print("HTTP/1.1 200 OK")
-print("Content-type: text/html\r\n\r\n")
 print("<!DOCTYPE html>")
 print("<html>")
 print("<head>")

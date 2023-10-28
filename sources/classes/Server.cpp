@@ -85,8 +85,6 @@ void Server::setErrorPages(std::vector<std::string> &parametr)
 	}
 }
 
-
-
 void Server::setLocation(std::string nameLocation, std::vector<std::string> parametr)
 {
 	Location location;
@@ -177,42 +175,26 @@ int Server::isValidLocation(Location &location) const
 		for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
 		{
 			std::string tmp = *it;
-			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh" )
+			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh")
 				return (0);
 			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
 			{
 				std::string tmp_path = *it_path;
 				if (tmp == ".py" || tmp == "*.py")
 				{
-					// DEBUGGING STARTS -- ADDING PYTHON
-					std::cout << YELLOW_BOLD << "DEBUG CGI " << tmp_path << RESET << std::endl;
-					// DEBUGGING ENDS
 					if (tmp_path.find("python") != std::string::npos)
 						location._ext_path.insert(std::make_pair(".py", tmp_path));
 				}
 				else if (tmp == ".sh" || tmp == "*.sh")
 				{
-					// DEBUGGING STARTS -- ADDING SH
-					std::cout << YELLOW_BOLD << "DEBUG CGI " << tmp_path << RESET << std::endl;
-					// DEBUGGING ENDS
 					if (tmp_path.find("bash") != std::string::npos)
 						location._ext_path[".sh"] = tmp_path;
 				}
 			}
 		}
-		// DEBUGGING STARTS
-		std::cout << GREEN_BOLD << "_ext_path size: " << location._ext_path.size() << RESET << std::endl;
-		std::cout << GREEN_BOLD << "CgiPath size: " << location.getCgiPath().size() << RESET << std::endl;
-		// DEBUGGING ENDS
 		if (location.getCgiPath().size() != location.getExtensionPath().size())
 			return (0);
-		// DEBUGGING STARTS
-		std::cout << GREEN_BOLD << "IT'S OKAY :)" << RESET << std::endl;
-		// DEBUGGING ENDS
 	}
-	// DEBUGGING STARTS
-	std::cout << "LOL XD" << std::endl;
-	// DEBUGGING ENDS
 	return 1;
 }
 

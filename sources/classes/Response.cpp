@@ -264,11 +264,11 @@ int Response::getController(Location location)
 			_cgi_state = 1;
 			handleCgi(location);
 			// std::cout << "status code: " << statusCode << std::endl;
-			// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-			// res += "Content-Type: text/html\r\n";
-			// res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-			// res += "\r\n";
-			std::string res = _response;
+			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+			res += "Content-Type: text/html\r\n";
+			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+			res += "\r\n";
+			res += _response;
 			set_headers(res);
 			return 0;
 		}
@@ -424,6 +424,7 @@ int Response::respond()
 	std::vector<std::string> sub_uris = generateSubUris(loc_path);
 	// std::reverse(sub_uris.begin(), sub_uris.end());
 	bool flag = true;
+	// ! REDIRECTIONS
 	// for (size_t i = 0; i < sub_uris.size(); ++i)
 	// {
 	// 	if (!flag)
@@ -471,6 +472,8 @@ int Response::respond()
 	std::vector<Location>::iterator it;
 	flag = true;
 	std::vector<std::string> methods;
+
+	// ! LOCATION MATCHING
 	for (size_t i = 0; i < sub_uris.size(); ++i)
 	{
 		if (!flag)
@@ -488,9 +491,6 @@ int Response::respond()
 			{
 				flag = false;
 				_path = it->getRootLocation() + _req_path;
-				// DEBUGGING STARTS
-				std::cout << "path: " << _path << std::endl;
-				// DEBUGGING ENDS
 				if (it->getPath() != "/" && _req_path == "/")
 					_path = _server_conf.getRoot() + _req_path;
 				// check if resource exists
@@ -779,10 +779,6 @@ int Response::handleCgi(Location location)
 	std::string exten;
 	size_t pos;
 
-	// DEBUGGING STARTS
-	std::cout << "handleCgi() called" << std::endl;
-	// DEBUGGING ENDS
-
 	path = this->_req.getPath();
 	if (path[0] && path[0] == '/')
 		path.erase(0, 1);
@@ -791,9 +787,6 @@ int Response::handleCgi(Location location)
 	// else if (path == "cgi-bin/")
 	// 	path.append(_server_conf.getLocationKey(location_key)->getIndexLocation());
 
-	// DEBUGGING STARTS
-	std::cout << "path: " << path << std::endl;
-	// DEBUGGING ENDS
 	path = _path;
 	pos = path.find(".");
 	if (pos == std::string::npos)
@@ -829,12 +822,6 @@ int Response::handleCgi(Location location)
 	}
 	_cgi_obj.initEnv(_req, location); // + URI
 	_cgi_obj.execute(statusCode);
-	// DEBUGGING STARTS
-	std::cout << BLUE_BOLD << "CGI FINISH EXECUTE <status code: " << statusCode << ">" << std::endl;
-	// DEBUGGING ENDS
 	_response = _cgi_obj.getResponse();
-	// DEBUGGING STARTS
-	std::cout << "response: " << _response << std::endl;
-	// DEBUGGING ENDS
 	return (0);
 }

@@ -101,7 +101,7 @@ void Multiplexer::readRequest(const int &i, Client &client)
 	int bytes_read = 0;
 	bytes_read = read(i, buffer, BUFFER_SIZE);
 	// std::cout << GREEN_BOLD <<"the read of the request  "  << RESET << std::endl;
-	if (bytes_read < 1)
+	if (bytes_read < 0)
 	{
 		std::cerr << "webserv: fd " << i << " read error " << strerror(errno) << std::endl;
 		closeConnection(i);
@@ -113,16 +113,9 @@ void Multiplexer::readRequest(const int &i, Client &client)
 		memset(buffer, 0, sizeof(buffer));
 		if (client.request.parsingCompleted() || client.request.errorCode()) // 1 = parsing completed and we can work on the response.
 		{
-			// DEBUGGING STARTS
-			std::cout << "PARSING COMPLETE" << std::endl;
-			// DEBUGGING ENDS
-
 			client.buildResponse();
 			if (client.response.getCgiState())
 			{
-				// DEBUGGING STARTS
-				std::cout << "CGI STATE: " << client.response.getCgiState() << std::endl;
-				// DEBUGGING ENDS
 				handleReqBody(client);
 				addToSet(client.response._cgi_obj.pipe_in[1], _write_fds);
 				addToSet(client.response._cgi_obj.pipe_out[0], _recv_fds);
@@ -237,7 +230,7 @@ void Multiplexer::acceptNewConnection(Server &serv)
 		std::cerr << "webserv: accept error " << strerror(errno) << std::endl;
 		return;
 	}
-	std::cout << YELLOW_BOLD << "New Connection From " << inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN) << "Assigned Socket " << client_sock << RESET << std::endl;
+	std::cout << YELLOW_BOLD << "Assigned Socket " << client_sock << " to connection from " << inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN) << RESET << std::endl;
 	addToSet(client_sock, _recv_fds);
 	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
 	{
