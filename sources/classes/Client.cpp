@@ -2,16 +2,16 @@
 
 Client::Client() {}
 Client::~Client() {}
-Client::Client(const Client &other) {*this = other;}
-void    					Client::setSocket(int &sock) {_client_socket = sock;}
-void    					Client::clearClient() {request.clear();}
-void    					Client::setAddress(sockaddr_in &addr) {_client_address =  addr;}
-void    					Client::setServer(Server &server) {response.setServer(server);}
-const int     				&Client::getSocket() const {return (_client_socket);}
-const Request   			&Client::getRequest() const {return (request);}
-const struct sockaddr_in    &Client::getAddress() const {return (_client_address);}
+Client::Client(const Client &other) { *this = other; }
+void Client::setSocket(int &sock) { _client_socket = sock; }
+void Client::clearClient() { request.clear(); }
+void Client::setAddress(sockaddr_in &addr) { _client_address = addr; }
+void Client::setServer(Server &server) { response.setServer(server); }
+const int &Client::getSocket() const { return (_client_socket); }
+const Request &Client::getRequest() const { return (request); }
+const struct sockaddr_in &Client::getAddress() const { return (_client_address); }
 /* Assinment operator */
-Client &Client::operator=(const Client & rhs)
+Client &Client::operator=(const Client &rhs)
 {
 	if (this != &rhs)
 	{
@@ -24,7 +24,7 @@ Client &Client::operator=(const Client & rhs)
 		this->isFileOpened = rhs.isFileOpened;
 		this->_rem = rhs._rem;
 		this->bytesRead = rhs.bytesRead;
-		this->content_len =rhs.content_len;
+		this->content_len = rhs.content_len;
 		this->bytes_sent = rhs.bytes_sent;
 		this->flag = rhs.flag;
 	}
@@ -41,11 +41,11 @@ Client::Client(Server &server)
 	bytes_sent = 0;
 	flag = false;
 	response.setServer(server);
-    request.setMaxBodySize(server.getClientMaxBodySize());
+	request.setMaxBodySize(server.getClientMaxBodySize());
 }
 
-void        Client::buildResponse()
+void Client::buildResponse()
 {
-    response.setRequest(this->request);
-    response.respond();
+	response.setRequest(this->request);
+	response.respond();
 }

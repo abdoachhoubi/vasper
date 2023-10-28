@@ -645,9 +645,9 @@ std::string &Request::getFragment()
     return (_fragment);
 }
 
-std::string Request::getHeader(std::string const &name)
+std::string Request::getHeader(std::string header)
 {
-    return (_request_headers[name]);
+    return (_request_headers[header]);
 }
 
 const std::map<std::string, std::string> &Request::getHeaders() const

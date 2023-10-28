@@ -46,22 +46,31 @@ bool Response::isResourceFound(const std::string &fullPath)
 	return (!(_type == "ERROR"));
 }
 
-std::string Response::generateResponse(std::string fullPath, int flag, Server server)
+std::string Response::generateResponse(std::string fullPath, int flag, Location location)
 {
 	if (flag == 1)
 	{
-		fullPath += server.getIndex();
+		if (location.getIndexLocation() != "")
+			fullPath += location.getIndexLocation();
+		else if (_server_conf.getIndex() != "")
+			fullPath += _server_conf.getIndex();
 		contentType = "text/html";
 	}
 	std::ifstream file(fullPath.c_str(), std::ios::binary | std::ios::ate);
 	if (!file)
 	{
-		std::cout << "error in opening the file " << std::endl;
+		std::cout << "error in openiing the file " << std::endl;
 		set_headers(generateErrorResponse(500));
-		return get_response();
+		std::cout <<"the headers are : " << _response << std::endl;
+		return _headers;
 	}
 	_path = fullPath;
 	fileSize = file.tellg();
+	if (fileSize > (long long)_server_conf.getClientMaxBodySize())
+	{
+		set_headers(generateErrorResponse(413));
+		return _headers;
+	}
 	contentType = getContentTypeFromExtension(fullPath);
 	file.close();
 	setStatus(statusCode, statusTextGen(statusCode));
@@ -259,11 +268,11 @@ int Response::getController(Location location)
 	{
 		// CGI STARTS HERE
 		std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-		if (file_extension == "py" || file_extension == "sh")
+		if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
 		{
 			_cgi_state = 1;
 			handleCgi(location);
-			std::cout << "status code: " << statusCode << std::endl;
+			// std::cout << "status code: " << statusCode << std::endl;
 			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 			res += "Content-Type: text/html\r\n";
 			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
@@ -273,7 +282,7 @@ int Response::getController(Location location)
 			return 0;
 		}
 		// CGI ENDS HERE
-		generateResponse(getPath(), 0, _server_conf);
+		generateResponse(getPath(), 0, location);
 		_check = false;
 		return 0;
 	}
@@ -283,24 +292,26 @@ int Response::getController(Location location)
 			setPath(getPath() + "/");
 
 		// ERROR HERE , WE SHOULD FIX IT LATER...
-		if (!Server::isReadableAndExist(getPath(), location.getIndexLocation()))
+		if (!Server::isReadableAndExist(getPath(), location.getIndexLocation()) && (location.getIndexLocation() != "" || _server_conf.getIndex() != ""))
 		{
-			set_headers(generateResponse(getPath(), 1, _server_conf));
+			set_headers(generateResponse(getPath(), 1, location));
 			return 0;
 		}
 		else
 		{
 			if (location.getAutoindex())
 			{
-				// std::cout << "dkhal lhad else " << std::endl;
-				// std::cout << "hna autoindex ta3 achoub " << std::endl;
 				std::string response_body = autoindex_body((char *)getPath().c_str(), _req.getPath());
+				if (response_body.size() > _server_conf.getClientMaxBodySize())
+				{
+					set_headers(generateErrorResponse(413));
+					return 0;
+				}
 				std::string response = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 				response += "Content-Type: text/html\r\n";
 				response += "Content-Length: " + to_string(response_body.length()) + "\r\n";
 				response += "\r\n";
 				response += response_body;
-				// std::cout << BLUE_BOLD << response << RESET << std::endl;
 				set_headers(response);
 				return 0;
 			}
@@ -320,16 +331,21 @@ int Response::getController(Location location)
 
 int Response::postController(Location location)
 {
+	if (_req.getBody().size() > _server_conf.getClientMaxBodySize())
+	{
+		set_headers(generateErrorResponse(413));
+		return 0;
+	}
 	// CGI STARTS HERE
 	std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-	if (file_extension == "py" || file_extension == "sh")
+	if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
 	{
 		handleCgi(location);
-		std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-		res += "Content-Type: text/html\r\n";
-		res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-		res += "\r\n";
-		res += _response;
+		// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+		// res += "Content-Type: text/html\r\n";
+		// res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+		// res += "\r\n";
+		std::string res = _response;
 		set_headers(res);
 		return 0;
 	}
@@ -406,8 +422,8 @@ int Response::deleteController(Location location)
 // Response main method (tkhari9a)
 int Response::respond()
 {
-	std::string _req_path = _req.getPath();
 	_req.setPath(decodePath(_req.getPath()));
+	std::string _req_path = _req.getPath();
 	std::string loc_path = _req.getPath();
 	if (loc_path[loc_path.length() - 1] == '/')
 		loc_path = loc_path.substr(0, loc_path.length() - 1);
@@ -419,10 +435,10 @@ int Response::respond()
 
 	std::vector<Location> loc = _server_conf.getLocations();
 
-	// redirections
+	// ! REDIRECTIONS
 	// std::vector<Location>::iterator itx;
 	std::vector<std::string> sub_uris = generateSubUris(loc_path);
-	// std::reverse(sub_uris.begin(), sub_uris.end());
+	std::reverse(sub_uris.begin(), sub_uris.end());
 	bool flag = true;
 	// for (size_t i = 0; i < sub_uris.size(); ++i)
 	// {
@@ -450,7 +466,7 @@ int Response::respond()
 	// 						loc_path = ity->getPath();
 	// 						_req.setPath(loc_path);
 	// 						redir = true;
-	// 						break;
+	// 						return (respond());
 	// 					}
 	// 				}
 	// 			}
@@ -471,6 +487,8 @@ int Response::respond()
 	std::vector<Location>::iterator it;
 	flag = true;
 	std::vector<std::string> methods;
+
+	// ! LOCATION MATCHING
 	for (size_t i = 0; i < sub_uris.size(); ++i)
 	{
 		if (!flag)
@@ -486,16 +504,19 @@ int Response::respond()
 				sub_uri = "/";
 			if (it->getPath() == sub_uri)
 			{
+				if (it->getRootLocation() != "")
+					_req_path = _req_path.replace(0, sub_uri.length() - 1, it->getRootLocation());
+				else
+					_req_path = _req_path.replace(0, sub_uri.length() - 1, _server_conf.getRoot());
+				// if (it->getPath() != "/" && _req_path == "/")
+				// 	_path = _server_conf.getRoot() + _req_path;
 				flag = false;
-				_path = it->getRootLocation() + _req_path;
+				_path = _req_path;
 				// DEBUGGING STARTS
-				std::cout << "path: " << _path << std::endl;
+				std::cout << _path << std::endl;
 				// DEBUGGING ENDS
-				if (it->getPath() != "/" && _req_path == "/")
-					_path = _server_conf.getRoot() + _req_path;
 				// check if resource exists
 				isResourceFound(_path);
-				// check if location contains the method in it's allowed methods
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
 				{
 					set_headers(generateErrorResponse(405));
@@ -779,10 +800,6 @@ int Response::handleCgi(Location location)
 	std::string exten;
 	size_t pos;
 
-	// DEBUGGING STARTS
-	std::cout << "handleCgi() called" << std::endl;
-	// DEBUGGING ENDS
-
 	path = this->_req.getPath();
 	if (path[0] && path[0] == '/')
 		path.erase(0, 1);
@@ -791,9 +808,6 @@ int Response::handleCgi(Location location)
 	// else if (path == "cgi-bin/")
 	// 	path.append(_server_conf.getLocationKey(location_key)->getIndexLocation());
 
-	// DEBUGGING STARTS
-	std::cout << "path: " << path << std::endl;
-	// DEBUGGING ENDS
 	path = _path;
 	pos = path.find(".");
 	if (pos == std::string::npos)
@@ -802,7 +816,7 @@ int Response::handleCgi(Location location)
 		return (1);
 	}
 	exten = path.substr(pos);
-	if (exten != ".py" && exten != ".sh")
+	if (exten != ".php" && exten != ".sh")
 	{
 		statusCode = 501;
 		return (1);
@@ -829,12 +843,6 @@ int Response::handleCgi(Location location)
 	}
 	_cgi_obj.initEnv(_req, location); // + URI
 	_cgi_obj.execute(statusCode);
-	// DEBUGGING STARTS
-	std::cout << BLUE_BOLD << "CGI FINISH EXECUTE <status code: " << statusCode << ">" << std::endl;
-	// DEBUGGING ENDS
 	_response = _cgi_obj.getResponse();
-	// DEBUGGING STARTS
-	std::cout << "response: " << _response << std::endl;
-	// DEBUGGING ENDS
 	return (0);
 }

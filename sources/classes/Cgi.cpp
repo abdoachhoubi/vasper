@@ -108,11 +108,11 @@ void Cgi::initEnvCgi(Request &req, Location &location)
 	}
 
 	this->_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
-	this->_env["SCRIPT_NAME"] = cgi_exec; //
+	this->_env["SCRIPT_NAME"] = cgi_exec;
 	this->_env["SCRIPT_FILENAME"] = this->_cgi_path;
-	this->_env["PATH_INFO"] = this->_cgi_path;		 //
-	this->_env["PATH_TRANSLATED"] = this->_cgi_path; //
-	this->_env["REQUEST_URI"] = this->_cgi_path;	 //
+	this->_env["PATH_INFO"] = this->_cgi_path;
+	this->_env["PATH_TRANSLATED"] = this->_cgi_path;
+	this->_env["REQUEST_URI"] = this->_cgi_path;
 	this->_env["SERVER_NAME"] = req.getHeader("host");
 	this->_env["SERVER_PORT"] = "3000";
 	this->_env["REQUEST_METHOD"] = req.getMethodStr();
@@ -154,9 +154,6 @@ void Cgi::initEnv(Request &req, Location &location)
 	// if (it_path == location._ext_path.end())
 	// 	return;
 	ext_path = location._ext_path[extension];
-	std::cout << "LOCATION PATH ==> " << location.getPath() << std::endl;
-	std::cout << RED_BOLD << "_ext_path size: " << location._ext_path.size() << RESET << std::endl;
-	std::cout << "EXTENSION ==> " << extension << std::endl;
 
 	this->_env["AUTH_TYPE"] = "Basic";
 	this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
@@ -188,9 +185,6 @@ void Cgi::initEnv(Request &req, Location &location)
 		this->_ch_env[i] = strdup(tmp.c_str());
 	}
 	this->_argv = (char **)malloc(sizeof(char *) * 3);
-	// DEBUGGING STARTS
-	std::cout << GREEN_BOLD << "EXT PATH: " << ext_path << RESET << std::endl;
-	// DEBUGGING ENDS
 	this->_argv[0] = strdup(ext_path.c_str());
 	this->_argv[1] = strdup(this->_cgi_path.c_str());
 	this->_argv[2] = NULL;
@@ -199,9 +193,6 @@ void Cgi::initEnv(Request &req, Location &location)
 /* Pipe and execute CGI */
 void Cgi::execute(short &error_code)
 {
-	// DEBUGGING STARTS
-	std::cout << GREEN_BOLD << this->_argv[0] << RESET << std::endl;
-	// DEBUGGING ENDS
 	if (this->_argv[0] == NULL || this->_argv[1] == NULL)
 	{
 		error_code = 500;
@@ -311,11 +302,7 @@ std::string Cgi::getResponse()
 
 	while (bytes_read > 0)
 	{
-		// DEBUGGING STARTS
 		buffer[bytes_read] = '\0';
-		std::cout << GREEN_BOLD << "bytes_read: " << bytes_read << RESET << std::endl;
-		std::cout << GREEN_BOLD << "buffer: " << buffer << RESET << std::endl;
-		// DEBUGGING ENDS
 		response += buffer;
 
 		// Adding a condition to not hang on the read

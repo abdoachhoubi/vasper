@@ -50,7 +50,7 @@ class Request
         std::string                                 &getPath();
         std::string                                 &getQuery();
         std::string                                 &getFragment();
-        std::string                                 getHeader(std::string const &);
+        std::string                                 getHeader(std::string header);
 		const std::map<std::string, std::string>    &getHeaders() const;
 		std::string                                 getMethodStr();
         std::string                                 &getBody();

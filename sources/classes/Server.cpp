@@ -24,10 +24,6 @@ const std::map<error_pages, std::string> &Server::getErrorPages() { return _erro
 
 Server::Server()
 {
-	setRoot("/");
-	setListen("80");
-	setHost("localhost");
-	setIndex("index.html");
 }
 
 Server &Server::operator=(const Server &other)
@@ -84,8 +80,6 @@ void Server::setErrorPages(std::vector<std::string> &parametr)
 		_errorPages[key] = value;
 	}
 }
-
-
 
 void Server::setLocation(std::string nameLocation, std::vector<std::string> parametr)
 {
@@ -161,7 +155,7 @@ bool Server::isValidErrorPages()
 int Server::isValidLocation(Location &location) const
 {
 	// TODO: CHANGE CONDITION
-	if (location.getPath() == "/")
+	if (location.getCGI())
 	{
 		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
 			return (0);
@@ -184,35 +178,19 @@ int Server::isValidLocation(Location &location) const
 				std::string tmp_path = *it_path;
 				if (tmp == ".py" || tmp == "*.py")
 				{
-					// DEBUGGING STARTS -- ADDING PYTHON
-					std::cout << YELLOW_BOLD << "DEBUG CGI " << tmp_path << RESET << std::endl;
-					// DEBUGGING ENDS
 					if (tmp_path.find("python") != std::string::npos)
 						location._ext_path.insert(std::make_pair(".py", tmp_path));
 				}
 				else if (tmp == ".sh" || tmp == "*.sh")
 				{
-					// DEBUGGING STARTS -- ADDING SH
-					std::cout << YELLOW_BOLD << "DEBUG CGI " << tmp_path << RESET << std::endl;
-					// DEBUGGING ENDS
 					if (tmp_path.find("bash") != std::string::npos)
 						location._ext_path[".sh"] = tmp_path;
 				}
 			}
 		}
-		// DEBUGGING STARTS
-		std::cout << GREEN_BOLD << "_ext_path size: " << location._ext_path.size() << RESET << std::endl;
-		std::cout << GREEN_BOLD << "CgiPath size: " << location.getCgiPath().size() << RESET << std::endl;
-		// DEBUGGING ENDS
 		if (location.getCgiPath().size() != location.getExtensionPath().size())
 			return (0);
-		// DEBUGGING STARTS
-		std::cout << GREEN_BOLD << "IT'S OKAY :)" << RESET << std::endl;
-		// DEBUGGING ENDS
 	}
-	// DEBUGGING STARTS
-	std::cout << "LOL XD" << std::endl;
-	// DEBUGGING ENDS
 	return 1;
 }
 
@@ -315,7 +293,6 @@ int Server::isReadableAndExist(std::string const path, std::string const index)
 {
 	int type;
 	std::string path_p = path + "/" + index;
-
 	type = getTypePath(path_p);
 	if (type == -1)
 		return -1;
