@@ -108,11 +108,11 @@ void Cgi::initEnvCgi(Request &req, Location &location)
 	}
 
 	this->_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
-	this->_env["SCRIPT_NAME"] = cgi_exec; //
+	this->_env["SCRIPT_NAME"] = cgi_exec;
 	this->_env["SCRIPT_FILENAME"] = this->_cgi_path;
-	this->_env["PATH_INFO"] = this->_cgi_path;		 //
-	this->_env["PATH_TRANSLATED"] = this->_cgi_path; //
-	this->_env["REQUEST_URI"] = this->_cgi_path;	 //
+	this->_env["PATH_INFO"] = this->_cgi_path;
+	this->_env["PATH_TRANSLATED"] = this->_cgi_path;
+	this->_env["REQUEST_URI"] = this->_cgi_path;
 	this->_env["SERVER_NAME"] = req.getHeader("host");
 	this->_env["SERVER_PORT"] = "3000";
 	this->_env["REQUEST_METHOD"] = req.getMethodStr();

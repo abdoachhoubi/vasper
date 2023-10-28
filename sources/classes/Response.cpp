@@ -419,52 +419,51 @@ int Response::respond()
 
 	std::vector<Location> loc = _server_conf.getLocations();
 
-	// redirections
-	// std::vector<Location>::iterator itx;
-	std::vector<std::string> sub_uris = generateSubUris(loc_path);
-	// std::reverse(sub_uris.begin(), sub_uris.end());
-	bool flag = true;
 	// ! REDIRECTIONS
-	// for (size_t i = 0; i < sub_uris.size(); ++i)
-	// {
-	// 	if (!flag)
-	// 		break;
-	// 	for (itx = loc.begin(); itx != loc.end(); ++itx)
-	// 	{
-	// 		if (!flag)
-	// 			break;
-	// 		std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
-	// 		if (sub_uri == "")
-	// 			sub_uri = "/";
-	// 		if (itx->getPath() == sub_uri)
-	// 		{
-	// 			flag = false;
-	// 			bool redir = false;
-	// 			if (!itx->getReturn().empty())
-	// 			{
-	// 				std::vector<Location>::iterator ity;
-	// 				for (ity = loc.begin(); ity != loc.end(); ++ity)
-	// 				{
-	// 					if (ity->getPath() == itx->getReturn())
-	// 					{
-	// 						statusCode = 302;
-	// 						loc_path = ity->getPath();
-	// 						_req.setPath(loc_path);
-	// 						redir = true;
-	// 						break;
-	// 					}
-	// 				}
-	// 			}
-	// 			else
-	// 				redir = true;
-	// 			if (!redir)
-	// 			{
-	// 				set_headers(generateErrorResponse(301));
-	// 				return (0);
-	// 			}
-	// 		}
-	// 	}
-	// }
+	std::vector<Location>::iterator itx;
+	std::vector<std::string> sub_uris = generateSubUris(loc_path);
+	std::reverse(sub_uris.begin(), sub_uris.end());
+	bool flag = true;
+	for (size_t i = 0; i < sub_uris.size(); ++i)
+	{
+		if (!flag)
+			break;
+		for (itx = loc.begin(); itx != loc.end(); ++itx)
+		{
+			if (!flag)
+				break;
+			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
+			if (sub_uri == "")
+				sub_uri = "/";
+			if (itx->getPath() == sub_uri)
+			{
+				flag = false;
+				bool redir = false;
+				if (!itx->getReturn().empty())
+				{
+					std::vector<Location>::iterator ity;
+					for (ity = loc.begin(); ity != loc.end(); ++ity)
+					{
+						if (ity->getPath() == itx->getReturn())
+						{
+							statusCode = 302;
+							loc_path = ity->getPath();
+							_req.setPath(loc_path);
+							redir = true;
+							return (respond());
+						}
+					}
+				}
+				else
+					redir = true;
+				if (!redir)
+				{
+					set_headers(generateErrorResponse(301));
+					return (0);
+				}
+			}
+		}
+	}
 
 	sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
