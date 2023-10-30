@@ -2,16 +2,19 @@
 
 void usage()
 {
+	std::cerr << RED_BOLD << "Error: Wrong number of arguments" << RESET << std::endl;
 	std::cout << std::endl
 			  << WHITE_BOLD << "Name:\twebserv" << std::endl;
 	std::cout << "Usage:\t./webserv\t\t" << MAGENTA_BOLD << "Runs a webserver using the default config file" << RESET << std::endl;
 	std::cout << "\t./webserv <config file>\t" << MAGENTA_BOLD << "Runs a webserver using a specific config file" << RESET << std::endl;
+	exit(1);
 }
 
 void signalHandler(int signal)
 {
 	if (signal == SIGINT || signal == SIGTSTP)
 		exit(0);
+	// TODO (close all the fds and exit)
 }
 
 int main(int ac, char **av)
@@ -28,10 +31,8 @@ int main(int ac, char **av)
 
 			config_file = (ac == 1 ? "./config/default.conf" : av[1]);
 			config_parser.parse(config_file);
-			// config_parser.print();
-			// exit(0);
 
-			multiplexer.setupServers(config_parser.getServers());
+			multiplexer.createServers(config_parser.getServers());
 			multiplexer.runServers();
 		}
 		catch (std::exception &e)
@@ -41,9 +42,17 @@ int main(int ac, char **av)
 		}
 	}
 	else
-	{
-		std::cerr << RED_BOLD << "Error: Wrong number of arguments" << RESET << std::endl;
 		usage();
-	}
 	return (0);
 }
+
+// Naming convention:
+// 	- Classes: UpperCamelCase
+// 	- Functions: lowerCamelCase
+// 	- Variables: lower_snake_case
+// 	- Macros: UPPER_SNAKE_CASE
+// 	- Enums: UPPER_SNAKE_CASE
+// 	- Structs: UpperCamelCase
+// 	- Files: lower_snake_case
+// 	- Includes: lower_snake_case
+// 	- Defines: UPPER_SNAKE_CASE

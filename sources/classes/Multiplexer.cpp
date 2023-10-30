@@ -9,14 +9,14 @@ Multiplexer::Multiplexer()
 
 Multiplexer::~Multiplexer() {}
 
-void Multiplexer::setupServers(std::vector<Server> servers)
+void Multiplexer::createServers(std::vector<Server> servers)
 {
-	std::cout << RED_BOLD << "Creating Servers" << RESET << std::endl;
 	_servers = servers;
+	std::cout << RED_BOLD << "Creating Servers" << RESET << std::endl;
 	char buf[INET_ADDRSTRLEN];
 	for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
 	{
-		it->setupServer();
+		it->createServer();
 		std::cout << BLUE_BOLD << "Server " << it->getServerName().c_str() << " Created and listening on: http://" << inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN) << ":" << it->getPort() << RESET << std::endl;
 	}
 }
@@ -61,18 +61,12 @@ void Multiplexer::runServers()
 		if (select(fdmax + 1, &_recv_temp, &_write_temp, NULL, NULL) < 0)
 		{
 			std::cerr << "webserv: select error " << strerror(errno) << std::endl;
-			continue;
+			continue ;
 		}
-		int i = 2;
-		while (i <= fdmax)
+		for(int i = 2; i<= fdmax; i++)
 		{
 			if (FD_ISSET(i, &_write_temp))
-			{
-				// if (_clients_map[i].request.getMethod() == GET && _clients_map[i].response._check == false)
 				sendResponse(i, _clients_map[i]);
-				// else
-				// 	sendAstro(i, _clients_map[i]);
-			}
 			else if (FD_ISSET(i, &_recv_temp))
 			{
 				if (_servers_map.count(i))
@@ -80,7 +74,6 @@ void Multiplexer::runServers()
 				else
 					readRequest(i, _clients_map[i]);
 			}
-			++i;
 		}
 	}
 }
@@ -100,7 +93,6 @@ void Multiplexer::readRequest(const int &i, Client &client)
 	char buffer[BUFFER_SIZE];
 	int bytes_read = 0;
 	bytes_read = read(i, buffer, BUFFER_SIZE);
-	// std::cout << GREEN_BOLD <<"the read of the request  "  << RESET << std::endl;
 	if (bytes_read < 0)
 	{
 		std::cerr << "webserv: fd " << i << " read error " << strerror(errno) << std::endl;
@@ -145,8 +137,7 @@ void Multiplexer::buildTheResponse(Client &client)
 	if (client.isHeadSent == false)
 	{
 		client.flag = false;
-		std::string headers = client.response.get_headers();
-		client.response._response = headers;
+		client.response._response = client.response.get_headers();
 		client.content_len = client.response.fileSize;
 		client.isHeadSent = true;
 	}

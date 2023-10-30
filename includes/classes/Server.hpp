@@ -17,8 +17,8 @@ enum error_pages
 	SERVICE_UNAVAILABLE = 503,
 	GATEWAY_TIMEOUT = 504,
 	HTTP_VERSION_NOT_SUPPORTED = 505,
-NO_CONTENT=		204,
-MOVED_PERMANENTLY=	301
+	NO_CONTENT = 204,
+	MOVED_PERMANENTLY = 301
 };
 
 class Location;
@@ -68,13 +68,13 @@ public:
 	const std::vector<Location>::iterator getLocationKey(std::string key);
 	int isValidLocation(Location &location) const;
 	static void checkToken(std::string &parametr);
-	bool checkLocaitons() const;
+	bool checkLocations() const;
 	bool isValidErrorPages();
 	static int getTypePath(std::string const path);
 	static int accessFile(std::string const path, int mode);
 	static std::string fileToString(std::string path);
 	static int isReadableAndExist(std::string const path, std::string const index);
-	void setupServer();
+	void createServer();
 
 private:
 	uint16_t port;
@@ -90,4 +90,3 @@ private:
 	int listenFd;
 	std::string _uploadPath;
 };
-

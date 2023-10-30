@@ -25,7 +25,8 @@ void ConfParser::parse(const std::string &config_file)
 				throw std::runtime_error("Error: Server config file is not well formated 11");
 
 	for (size_t i = 0; i < servers.size(); i++)
-		for (size_t j = i + 1; j < servers.size();) {
+		for (size_t j = i + 1; j < servers.size();)
+		{
 			if (servers[i].getPort() == servers[j].getPort() && servers[i].getHost() == servers[j].getHost())
 				servers.erase(servers.begin() + j);
 			else
@@ -33,7 +34,7 @@ void ConfParser::parse(const std::string &config_file)
 		}
 
 	nbr_serv = servers.size();
-	std::cout << "nb serv: " << nbr_serv  << " size " << servers.size() << std::endl;
+	std::cout << "nb serv: " << nbr_serv << " size " << servers.size() << std::endl;
 }
 
 void ConfParser::splitServers(std::string &content)
@@ -174,11 +175,9 @@ void ConfParser::createServer(std::string &config, Server &server)
 				throw std::runtime_error("Error: Server config file is not well formated 9");
 		}
 	}
-	// if (Server::isReadableAndExist(server.getRoot(), server.getIndex()) < 0)
-	// 	throw std::runtime_error("Error: Index from config file not found 1");
-	// if (Server::isReadableAndExist(server.getRoot(), "") < 0)
-	// 	throw std::runtime_error("Error: Root from config file not found 2");
-	if (!server.checkLocaitons())
+	if (Server::isReadableAndExist(server.getRoot(), server.getUploadPath()) < 0)
+		throw std::runtime_error("Error: upload file not exist 2");
+	if (!server.checkLocations())
 		throw std::runtime_error("Error: in Location from config file");
 	if (!server.isValidErrorPages())
 		throw std::runtime_error("Error: in ErrorPages from config file");
@@ -191,7 +190,7 @@ std::vector<Server> ConfParser::getServers()
 
 int ConfParser::print()
 {
-	std::cout << "nb server: " << nbr_serv  << " size " << servers.size() << std::endl;
+	std::cout << "nb server: " << nbr_serv << " size " << servers.size() << std::endl;
 
 	for (size_t i = 0; i < servers.size(); i++)
 	{
@@ -251,13 +250,12 @@ int ConfParser::print()
 	return 0;
 }
 
-
 /* define is path is file(1), folder(2) or something else(3) */
 int ConfParser::getTypePath(std::string const path)
 {
-	struct stat	buffer;
-	int			result;
-	
+	struct stat buffer;
+	int result;
+
 	result = stat(path.c_str(), &buffer);
 	if (result == 0)
 	{
@@ -273,7 +271,7 @@ int ConfParser::getTypePath(std::string const path)
 }
 
 /* checks is the file exists and accessable */
-int	ConfParser::checkFile(std::string const path, int mode)
+int ConfParser::checkFile(std::string const path, int mode)
 {
 	return (access(path.c_str(), mode));
 }

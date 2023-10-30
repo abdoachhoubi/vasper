@@ -225,7 +225,7 @@ void Server::checkToken(std::string &parametr)
 	parametr = strtrim(parametr);
 }
 
-bool Server::checkLocaitons() const
+bool Server::checkLocations() const
 {
 	std::vector<Location>::const_iterator it = locations.begin();
 	std::vector<Location>::const_iterator ite = locations.end();
@@ -296,19 +296,18 @@ int Server::isReadableAndExist(std::string const path, std::string const index)
 	return 0;
 }
 
-void Server::setupServer(void)
+void Server::createServer(void)
 {
+	int option_value = 1;
 	if ((listenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		std::cerr << "webserv: socket error " << strerror(errno) << " Closing ...." << std::endl;
 		exit(EXIT_FAILURE);
 	}
-
-	int option_value = 1;
 	if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int)) < 0)
 	{
 		std::cerr << "Error: cannot reuse socket" << std::endl;
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	memset(&serveraddress, 0, sizeof(serveraddress));
 	serveraddress.sin_family = AF_INET;

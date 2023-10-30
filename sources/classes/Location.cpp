@@ -91,7 +91,18 @@ void Location::setReturn(std::string parametr) { _return = parametr; }
 
 void Location::setAlias(std::string parametr) { _alias = parametr; }
 
-void Location::setCgiPath(std::vector<std::string> path) { cgi_path = path; }
+void Location::setCgiPath(std::vector<std::string> path)
+{
+	for (size_t i = 0; i < path.size(); i++)
+	{
+		// check if path exists
+		struct stat buffer;
+		if (stat(path[i].c_str(), &buffer))
+			throw std::runtime_error("Error: invalid cgi_path");
+		i++;
+	}
+	cgi_path = path;
+}
 
 void Location::setCgiExtension(std::vector<std::string> extension) { cgi_extension = extension; }
 

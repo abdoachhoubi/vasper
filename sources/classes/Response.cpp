@@ -278,12 +278,8 @@ int Response::getController(Location location)
 		int i = 0;
 		while (i < (int)exts.size())
 		{
-			// check if the extension is in the cgi extensions (be aware that cgi extensions start with either . or *.)
 			if (((exts[i] == "*." + file_extension) || (exts[i] == "." + file_extension)) && location.getCGI())
 			{
-				// DEBUGGING STARTS
-				std::cout << "cgi extension: " << exts[i] << std::endl;
-				// DEBUGGING ENDS
 				_cgi_state = 1;
 				handleCgi(location);
 				// std::cout << "status code: " << statusCode << std::endl;
@@ -297,20 +293,6 @@ int Response::getController(Location location)
 			}
 			i++;
 		}
-		// if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
-		// {
-		// 	_cgi_state = 1;
-		// 	handleCgi(location);
-		// 	// std::cout << "status code: " << statusCode << std::endl;
-		// 	std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-		// 	res += "Content-Type: text/html\r\n";
-		// 	res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-		// 	res += "\r\n";
-		// 	res += _response;
-		// 	set_headers(res);
-		// 	return 0;
-		// }
-		// CGI ENDS HERE
 		generateResponse(getPath(), 0, location);
 		_check = false;
 		return 0;
@@ -319,8 +301,6 @@ int Response::getController(Location location)
 	{
 		if (getPath()[(int)(getPath().size() - 1)] != '/')
 			setPath(getPath() + "/");
-
-		// ERROR HERE , WE SHOULD FIX IT LATER...
 		if (!Server::isReadableAndExist(getPath(), location.getIndexLocation()) && (location.getIndexLocation() != "" || _server_conf.getIndex() != ""))
 		{
 			set_headers(generateResponse(getPath(), 1, location));
@@ -365,20 +345,29 @@ int Response::postController(Location location)
 		set_headers(generateErrorResponse(REQUEST_ENTITY_TOO_LARGE, _server_conf));
 		return 0;
 	}
-	// CGI STARTS HERE
+
 	std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-	if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
+	std::vector<std::string> exts = location.getCgiExtension();
+	std::vector<std::string> paths = location.getCgiPath();
+	int i = 0;
+	while (i < (int)exts.size())
 	{
-		handleCgi(location);
-		// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-		// res += "Content-Type: text/html\r\n";
-		// res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-		// res += "\r\n";
-		std::string res = _response;
-		set_headers(res);
-		return 0;
+		if (((exts[i] == "*." + file_extension) || (exts[i] == "." + file_extension)) && location.getCGI())
+		{
+			_cgi_state = 1;
+			handleCgi(location);
+			// std::cout << "status code: " << statusCode << std::endl;
+			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+			res += "Content-Type: text/html\r\n";
+			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+			res += "\r\n";
+			res += _response;
+			set_headers(res);
+			return 0;
+		}
+		i++;
 	}
-	// CGI ENDS HERE
+
 	std::string upload_path = _server_conf.getUploadPath();
 	if (upload_path[upload_path.length() - 1] == '/')
 		upload_path = upload_path.substr(0, upload_path.length() - 1);
@@ -819,7 +808,6 @@ int Response::getCgiState()
 int Response::handleCgi(Location location)
 {
 	std::string path;
-	std::string exten;
 	size_t pos;
 
 	path = this->_req.getPath();
@@ -833,15 +821,10 @@ int Response::handleCgi(Location location)
 		statusCode = NOT_IMPLEMENTED;
 		return (1);
 	}
-	exten = path.substr(pos);
-	// if (exten != ".py" && exten != ".sh" && exten != ".php")
-	// {
-	// 	statusCode = NOT_IMPLEMENTED;
-	// 	return (1);
-	// }
 	if (ConfParser::getTypePath(path) != 1)
 	{
 		statusCode = NOT_FOUND;
+		set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
 		return (1);
 	}
 	_cgi_obj.clear();
@@ -850,6 +833,7 @@ int Response::handleCgi(Location location)
 	if (pipe(_cgi_fd) < 0)
 	{
 		statusCode = INTERNAL_SERVER_ERROR;
+		set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
 		return (1);
 	}
 	_cgi_obj.initEnv(_req, location); // + URI
