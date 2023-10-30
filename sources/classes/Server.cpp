@@ -167,26 +167,14 @@ int Server::isValidLocation(Location &location) const
 			if (ConfParser::getTypePath(*it) < 0)
 				return (0);
 		}
-		std::vector<std::string>::const_iterator it_path;
-		for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
+		std::vector<std::string> cgi_exts = location.getCgiExtension();
+		std::vector<std::string> paths = location.getCgiPath();
+		int i = 0;
+		while (i < (int)cgi_exts.size())
 		{
-			std::string tmp = *it;
-			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh")
-				return (0);
-			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
-			{
-				std::string tmp_path = *it_path;
-				if (tmp == ".py" || tmp == "*.py")
-				{
-					if (tmp_path.find("python") != std::string::npos)
-						location._ext_path.insert(std::make_pair(".py", tmp_path));
-				}
-				else if (tmp == ".sh" || tmp == "*.sh")
-				{
-					if (tmp_path.find("bash") != std::string::npos)
-						location._ext_path[".sh"] = tmp_path;
-				}
-			}
+			// TODO <CHECK IF BIN FILE EXISTS>
+			location._ext_path.insert(std::make_pair(cgi_exts[i], paths[i]));
+			i++;
 		}
 		if (location.getCgiPath().size() != location.getExtensionPath().size())
 			return (0);
@@ -216,7 +204,7 @@ std::string strtrim(const std::string &input)
 	{
 		start++;
 	}
- 
+
 	// Find the position of the first non-white space character from the end
 	while (end >= start && std::isspace(input[end]))
 	{

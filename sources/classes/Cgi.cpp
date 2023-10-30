@@ -155,6 +155,10 @@ void Cgi::initEnv(Request &req, Location &location)
 	// 	return;
 	ext_path = location._ext_path[extension];
 
+	// DEBUGGING STARTS
+	std::cout << "EXT PATH ===> " << ext_path << std::endl;
+	// DEBUGGING ENDS
+
 	this->_env["AUTH_TYPE"] = "Basic";
 	this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
 	this->_env["CONTENT_TYPE"] = req.getHeader("content-type");

@@ -273,19 +273,43 @@ int Response::getController(Location location)
 	{
 		// CGI STARTS HERE
 		std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
-		if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
+		std::vector<std::string> exts = location.getCgiExtension();
+		std::vector<std::string> paths = location.getCgiPath();
+		int i = 0;
+		while (i < (int)exts.size())
 		{
-			_cgi_state = 1;
-			handleCgi(location);
-			// std::cout << "status code: " << statusCode << std::endl;
-			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
-			res += "Content-Type: text/html\r\n";
-			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-			res += "\r\n";
-			res += _response;
-			set_headers(res);
-			return 0;
+			// check if the extension is in the cgi extensions (be aware that cgi extensions start with either . or *.)
+			if (((exts[i] == "*." + file_extension) || (exts[i] == "." + file_extension)) && location.getCGI())
+			{
+				// DEBUGGING STARTS
+				std::cout << "cgi extension: " << exts[i] << std::endl;
+				// DEBUGGING ENDS
+				_cgi_state = 1;
+				handleCgi(location);
+				// std::cout << "status code: " << statusCode << std::endl;
+				std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+				res += "Content-Type: text/html\r\n";
+				res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+				res += "\r\n";
+				res += _response;
+				set_headers(res);
+				return 0;
+			}
+			i++;
 		}
+		// if ((file_extension == "py" || file_extension == "sh") && location.getCGI())
+		// {
+		// 	_cgi_state = 1;
+		// 	handleCgi(location);
+		// 	// std::cout << "status code: " << statusCode << std::endl;
+		// 	std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+		// 	res += "Content-Type: text/html\r\n";
+		// 	res += "Content-Length: " + to_string(_response.length()) + "\r\n";
+		// 	res += "\r\n";
+		// 	res += _response;
+		// 	set_headers(res);
+		// 	return 0;
+		// }
 		// CGI ENDS HERE
 		generateResponse(getPath(), 0, location);
 		_check = false;
@@ -810,11 +834,11 @@ int Response::handleCgi(Location location)
 		return (1);
 	}
 	exten = path.substr(pos);
-	if (exten != ".php" && exten != ".sh")
-	{
-		statusCode = NOT_IMPLEMENTED;
-		return (1);
-	}
+	// if (exten != ".py" && exten != ".sh" && exten != ".php")
+	// {
+	// 	statusCode = NOT_IMPLEMENTED;
+	// 	return (1);
+	// }
 	if (ConfParser::getTypePath(path) != 1)
 	{
 		statusCode = NOT_FOUND;
@@ -831,5 +855,6 @@ int Response::handleCgi(Location location)
 	_cgi_obj.initEnv(_req, location); // + URI
 	_cgi_obj.execute(statusCode);
 	_response = _cgi_obj.getResponse();
+	set_headers(_response);
 	return (0);
 }
