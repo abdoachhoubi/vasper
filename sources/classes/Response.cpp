@@ -566,9 +566,7 @@ bool Response::saveDataToFile(const std::string &filePath, const std::string &da
 	std::cout << final_path << std::endl;
 	std::ofstream file(final_path.c_str(), std::ios::binary);
 	if (!file.is_open())
-	{
 		return false;
-	}
 	file << data;
 	file.close();
 	return true;
@@ -803,10 +801,6 @@ int Response::handleCgi(Location location)
 	path = this->_req.getPath();
 	if (path[0] && path[0] == '/')
 		path.erase(0, 1);
-	// if (path == "cgi-bin")
-	// 	path += "/" + _server_conf.getLocationKey(location_key)->getIndexLocation();
-	// else if (path == "cgi-bin/")
-	// 	path.append(_server_conf.getLocationKey(location_key)->getIndexLocation());
 
 	path = _path;
 	pos = path.find(".");
@@ -826,13 +820,6 @@ int Response::handleCgi(Location location)
 		statusCode = NOT_FOUND;
 		return (1);
 	}
-	// if (ConfParser::checkFile(path, 1) == -1 || ConfParser::checkFile(path, 3) == -1)
-	// {
-	// 	statusCode = FORBIDDEN;
-	// 	return (1);
-	// }
-	// if (isAllowedMethod(_req.getMethod(), *_server_conf.getLocationKey(location_key), statusCode))
-	// 	return (1);
 	_cgi_obj.clear();
 	_cgi_obj.setCgiPath(path);
 	_cgi_state = 1;
