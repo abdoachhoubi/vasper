@@ -237,7 +237,7 @@ std::string Response::parseBoundary(std::string &body, std::string &boundary)
 			key = key.substr(0, key.find("\""));
 			value = part.substr(part.find("\r\n\r\n") + 4, part.length() - part.find("\r\n\r\n") - 4);
 			value = value.substr(0, value.length() - 2);
-			SaveDataToFile(key, value);
+			saveDataToFile(key, value);
 			new_body += "name: " + key + "\n";
 			new_body += "data: " + value + "\n\n";
 		}
@@ -355,7 +355,10 @@ int Response::postController(Location location)
 		return 0;
 	}
 	// CGI ENDS HERE
-	std::string _target_file = location.getRootLocation() + _req.getPath();
+	std::string upload_path = _server_conf.getUploadPath();
+	if (upload_path[upload_path.length() - 1] == '/')
+		upload_path = upload_path.substr(0, upload_path.length() - 1);
+	std::string _target_file = location.getRootLocation() + "/" + upload_path + _req.getPath();
 	if (fileExists(_target_file))
 	{
 		set_headers(generateErrorResponse(NO_CONTENT, _server_conf));
@@ -371,13 +374,13 @@ int Response::postController(Location location)
 	{
 		std::string body = _req.getBody();
 		body = parseBoundary(body, _req.getBoundary());
-		file.write(body.c_str(), body.length());
+		file << body;
 		set_headers(generateErrorResponse(SUCCESS, _server_conf));
 		return 0;
 	}
 	else
 	{
-		file.write(_req.getBody().c_str(), _req.getBody().length());
+		file << _req.getBody();
 		set_headers(generateErrorResponse(SUCCESS, _server_conf));
 		return 0;
 	}
@@ -521,14 +524,8 @@ int Response::respond()
 					_req_path = _req_path.replace(0, sub_uri.length() - 1, it->getRootLocation());
 				else
 					_req_path = _req_path.replace(0, sub_uri.length() - 1, _server_conf.getRoot());
-				// if (it->getPath() != "/" && _req_path == "/")
-				// 	_path = _server_conf.getRoot() + _req_path;
 				flag = false;
 				_path = _req_path;
-				// DEBUGGING STARTS
-				std::cout << _path << std::endl;
-				// DEBUGGING ENDS
-				// check if resource exists
 				isResourceFound(_path);
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
 				{
@@ -722,10 +719,6 @@ std::string Response::generateErrorResponse(error_pages code, Server server)
 {
 
 	std::map<error_pages, std::string> err_pages = server.getErrorPages();
-	// DEBUGGING STARTS
-	std::cout << RED_BOLD << "GENERATING ERROR RESPONSE" << RESET << std::endl;
-	std::cout << err_pages[code] << std::endl;
-	// DEBUGGING ENDS
 	if (err_pages[code] != "")
 	{
 		std::string path_to_error_page = server.getRoot() + "/" + err_pages[code];
@@ -799,39 +792,6 @@ int Response::getCgiState()
 {
 	return (_cgi_state);
 }
-
-// int Response::handleCgiTemp(std::string &location_key)
-// {
-
-// 	// DEBUGGING STARTS
-// 	std::cout << "handleCgiTemp() called" << std::endl;
-// 	// DEBUGGING ENDS
-
-// 	const std::string path = this->_req.getPath();
-// 	_cgi_obj.clear();
-// 	_cgi_obj.setCgiPath(path);
-// 	_cgi_state = 1;
-// 	if (pipe(_cgi_fd) < 0)
-// 	{
-// 		statusCode = INTERNAL_SERVER_ERROR;
-// 		return (1);
-// 	}
-// 	_cgi_obj.initEnvCgi(_req, _server_conf.getLocationKey(location_key)); // + URI
-// 	_cgi_obj.execute(statusCode);
-// 	return (0);
-// }
-
-// static bool isAllowedMethod(REQ_METHOD &method, Location &loc, short &code)
-// {
-// 	std::vector<bool> methods = loc.getMethods();
-// 	if ((method == GET && !methods[0]) || (method == POST && !methods[1]) ||
-// 		(method == DELETE && !methods[2]))
-// 	{
-// 		code = METHOD_NOT_ALLOWED;
-// 		return (1);
-// 	}
-// 	return (0);
-// }
 
 /* check a file for CGI (the extension is supported, the file exists and is executable) and run the CGI */
 int Response::handleCgi(Location location)

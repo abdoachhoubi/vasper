@@ -190,32 +190,6 @@ void Multiplexer::sendResponse(const int &i, Client &client)
 		client._rem = false; // send just a buffer size not all the response
 }
 
-void Multiplexer::sendAstro(const int &i, Client &client)
-{
-	int bytes_sent;
-	std::string response = client.response.get_response();
-
-	if (response.length() >= BUFFER_SIZE)
-		bytes_sent = write(i, response.c_str(), BUFFER_SIZE);
-	else
-		bytes_sent = write(i, response.c_str(), response.length());
-
-	if (bytes_sent < 0)
-		closeConnection(i);
-	else if (bytes_sent == 0 || (size_t)bytes_sent == response.length())
-	{
-		if (client.request.keepAlive() == false || client.request.errorCode())
-			closeConnection(i);
-		else
-		{
-			removeFromSet(i, _write_fds);
-			addToSet(i, _recv_fds);
-		}
-	}
-	else
-		client.response.cut_response(bytes_sent);
-}
-
 void Multiplexer::acceptNewConnection(Server &serv)
 {
 	struct sockaddr_in client_address;
