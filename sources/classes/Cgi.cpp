@@ -47,16 +47,16 @@ Cgi::Cgi(const Cgi &other)
 	this->_exit_status = other._exit_status;
 }
 
-Cgi &Cgi::operator=(const Cgi &rhs)
+Cgi &Cgi::operator=(const Cgi &other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		this->_env = rhs._env;
-		this->_ch_env = rhs._ch_env;
-		this->_argv = rhs._argv;
-		this->_cgi_path = rhs._cgi_path;
-		this->_cgi_pid = rhs._cgi_pid;
-		this->_exit_status = rhs._exit_status;
+		this->_env = other._env;
+		this->_ch_env = other._ch_env;
+		this->_argv = other._argv;
+		this->_cgi_path = other._cgi_path;
+		this->_cgi_pid = other._cgi_pid;
+		this->_exit_status = other._exit_status;
 	}
 	return (*this);
 }
@@ -202,36 +202,24 @@ void Cgi::execute(short &error_code)
 		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
-	if (pipe(pipe_in) < 0)
+	filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
+	if (filex < 0)
 	{
 		std::cerr << RED_BOLD << "pipe() failed" << RESET << std::endl;
-		error_code = INTERNAL_SERVER_ERROR;
-		return;
-	}
-	if (pipe(pipe_out) < 0)
-	{
-		std::cerr << RED_BOLD << "pipe() failed" << RESET << std::endl;
-
-		close(pipe_in[0]);
-		close(pipe_in[1]);
+		close(filex);
 		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
 	this->_cgi_pid = fork();
 	if (this->_cgi_pid == 0)
 	{
-		dup2(pipe_in[0], STDIN_FILENO);
-		dup2(pipe_out[1], STDOUT_FILENO);
-		close(pipe_in[0]);
-		close(pipe_in[1]);
-		close(pipe_out[0]);
-		close(pipe_out[1]);
+		dup2(filex, STDOUT_FILENO);
+		close(filex);
 		this->_exit_status = execve(this->_argv[0], this->_argv, this->_ch_env);
 		exit(this->_exit_status);
 	}
 	else if (this->_cgi_pid > 0)
-	{
-	}
+		waitpid(this->_cgi_pid, &this->_exit_status, 0);
 	else
 	{
 		std::cout << "Fork failed" << std::endl;
@@ -301,18 +289,21 @@ void Cgi::clear()
 std::string Cgi::getResponse()
 {
 	std::string response;
-	char buffer[BUFFER_SIZE];
-	int bytes_read = read(pipe_out[0], buffer, BUFFER_SIZE);
 
-	while (bytes_read > 0)
+	close(filex);
+	std::ifstream file("./vasper.cgi");
+	if (file.is_open())
 	{
-		buffer[bytes_read] = '\0';
-		response += buffer;
-
-		// Adding a condition to not hang on the read
-		if (bytes_read < BUFFER_SIZE)
-			break;
-		bytes_read = read(pipe_out[0], buffer, BUFFER_SIZE);
+		std::string line;
+		while (getline(file, line))
+		{
+			response += line;
+		}
+		file.close();
+	}
+	else if (!file.good())
+	{
+		std::cout << "Unable to open CGI file" << std::endl;
 	}
 	return (response);
 }

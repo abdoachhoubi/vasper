@@ -29,7 +29,7 @@ public:
 	Server();
 	~Server();
 	Server(const Server &other);
-	Server &operator=(const Server &rhs);
+	Server &operator=(const Server &other);
 
 	void setServerName(std::string server_name);
 	const std::string &getServerName();
@@ -70,19 +70,19 @@ public:
 	static void checkToken(std::string &parametr);
 	bool checkLocations() const;
 	bool isValidErrorPages();
-	static int getTypePath(std::string const path);
+	static int checkTypePath(std::string const path);
 	static int accessFile(std::string const path, int mode);
 	static std::string fileToString(std::string path);
 	static int isReadableAndExist(std::string const path, std::string const index);
 	void createServer();
 
 private:
-	uint16_t port;
-	in_addr_t host;
-	std::string nameServer;
-	std::string root;
+	uint16_t _port;
+	in_addr_t _host;
+	std::string _serverName;
+	std::string _root;
 	unsigned long clientMaxBodySize;
-	std::string index;
+	std::string _index;
 	bool autoindex;
 	std::map<error_pages, std::string> _errorPages;
 	std::vector<Location> locations;

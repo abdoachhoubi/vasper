@@ -1,5 +1,6 @@
 #include "../../includes/main.hpp"
 
+// TAG: Converts a hexadecimal number to a decimal number
 char fromHexToDec(std::string hex)
 {
 	char decimal = 0;
@@ -17,7 +18,9 @@ char fromHexToDec(std::string hex)
 	return (decimal);
 }
 
-std::vector<std::string> ft_split(const std::string& s) {
+// TAG: Split a string into a vector of strings
+std::vector<std::string> ft_split(const std::string &s)
+{
 	std::vector<std::string> tokens;
 	std::string token;
 	std::stringstream ss(s);
@@ -26,11 +29,11 @@ std::vector<std::string> ft_split(const std::string& s) {
 	return tokens;
 }
 
+// TAG: Splits a string into a vector of strings (separated by a separator)
 std::vector<std::string> splitParametrs(std::string line, std::string sep)
 {
-	std::vector<std::string>	str;
-	size_t		start, end;
-
+	std::vector<std::string> str;
+	size_t start, end;
 	start = end = 0;
 	while (1)
 	{
@@ -46,26 +49,40 @@ std::vector<std::string> splitParametrs(std::string line, std::string sep)
 	return (str);
 }
 
-std::vector<std::string> generateSubUris(const std::string &input) {
-    std::vector<std::string> substrings;
-    std::istringstream ss(input);
-    std::string token, current = "";
-    while (std::getline(ss, token, '/')) {
-        current += token + "/";
-        substrings.push_back(current);
-    }
-    return substrings;
+// TAG: Generates all the sub-uris of a given uri
+std::vector<std::string> generateSubUris(const std::string &input)
+{
+	std::vector<std::string> substrings;
+	std::istringstream ss(input);
+	std::string token, current = "";
+	while (std::getline(ss, token, '/'))
+	{
+		current += token + "/";
+		substrings.push_back(current);
+	}
+	return substrings;
 }
 
-// removes white spaces from the beginning and the end of the string (space, tab, etc.)
-// std::string str_trim(std::string src)
-// {
-// 	size_t start = 0;
-// 	size_t end = src.size() - 1;
+// TAG: Checks if a path is a directory
+bool is_dir(const std::string &path)
+{
+	struct stat file_info;
+	if (stat(path.c_str(), &file_info) != 0)
+		return false;
+	return S_ISDIR(file_info.st_mode);
+}
 
-// 	while (start < src.size() && isspace(src[start]))
-// 		start++;
-// 	while (end > 0 && isspace(src[end]))
-// 		end--;
-// 	return (src.substr(start, end - start + 1));
-// }
+// TAG: Trims white spaces from both ends of the string
+std::string strtrim(const std::string &input)
+{
+	size_t start = 0;
+	size_t end = input.length() - 1;
+
+	// Find the position of the first non-white space character from the beginning
+	while (start <= end && std::isspace(input[start]))
+		start++;
+	// Find the position of the first non-white space character from the end
+	while (end >= start && std::isspace(input[end]))
+		end--;
+	return input.substr(start, end - start + 1);
+}

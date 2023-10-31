@@ -61,9 +61,9 @@ void Multiplexer::runServers()
 		if (select(fdmax + 1, &_recv_temp, &_write_temp, NULL, NULL) < 0)
 		{
 			std::cerr << "webserv: select error " << strerror(errno) << std::endl;
-			continue ;
+			continue;
 		}
-		for(int i = 2; i<= fdmax; i++)
+		for (int i = 2; i <= fdmax; i++)
 		{
 			if (FD_ISSET(i, &_write_temp))
 				sendResponse(i, _clients_map[i]);
@@ -106,12 +106,12 @@ void Multiplexer::readRequest(const int &i, Client &client)
 		if (client.request.parsingCompleted() || client.request.errorCode()) // 1 = parsing completed and we can work on the response.
 		{
 			client.buildResponse();
-			if (client.response.getCgiState())
-			{
-				handleReqBody(client);
-				addToSet(client.response._cgi_obj.pipe_in[1], _write_fds);
-				addToSet(client.response._cgi_obj.pipe_out[0], _recv_fds);
-			}
+			// if (client.response.getCgiState())
+			// {
+			// 	handleReqBody(client);
+			// 	addToSet(client.response._cgi_obj.pipe_in[1], _write_fds);
+			// 	addToSet(client.response._cgi_obj.pipe_out[0], _recv_fds);
+			// }
 			removeFromSet(i, _recv_fds);
 			addToSet(i, _write_fds);
 		}

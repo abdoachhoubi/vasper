@@ -20,23 +20,23 @@ Location::Location(const Location &other)
 	*this = other;
 }
 
-Location &Location::operator=(const Location &rhs)
+Location &Location::operator=(const Location &other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		path = rhs.path;
-		root = rhs.root;
-		autoindex = rhs.autoindex;
-		index = rhs.index;
-		_methods = rhs._methods;
-		allowed_methods = rhs.allowed_methods;
-		_return = rhs._return;
-		_alias = rhs._alias;
-		cgi_path = rhs.cgi_path;
-		cgi_extension = rhs.cgi_extension;
-		clientMaxBodySize = rhs.clientMaxBodySize;
-		_ext_path = rhs._ext_path;
-		cgi = rhs.cgi;
+		path = other.path;
+		root = other.root;
+		autoindex = other.autoindex;
+		index = other.index;
+		_methods = other._methods;
+		allowed_methods = other.allowed_methods;
+		_return = other._return;
+		_alias = other._alias;
+		cgi_path = other.cgi_path;
+		cgi_extension = other.cgi_extension;
+		clientMaxBodySize = other.clientMaxBodySize;
+		_ext_path = other._ext_path;
+		cgi = other.cgi;
 	}
 	return (*this);
 }

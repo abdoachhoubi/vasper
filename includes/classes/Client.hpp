@@ -12,7 +12,7 @@ class Client
         Client();
         Client(const Client &other);
         Client(Server &server);
-		Client &operator=(const Client & rhs);
+		Client &operator=(const Client & other);
         ~Client();
 
         const int					&getSocket() const;

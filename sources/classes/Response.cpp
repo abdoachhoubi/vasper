@@ -840,5 +840,6 @@ int Response::handleCgi(Location location)
 	_cgi_obj.execute(statusCode);
 	_response = _cgi_obj.getResponse();
 	set_headers(_response);
+	remove("./vasper.cgi");
 	return (0);
 }

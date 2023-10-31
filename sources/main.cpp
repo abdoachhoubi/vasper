@@ -1,5 +1,6 @@
 #include "../includes/main.hpp"
 
+// TAG: Prints the usage of the program
 void usage()
 {
 	std::cerr << RED_BOLD << "Error: Wrong number of arguments" << RESET << std::endl;
@@ -10,6 +11,7 @@ void usage()
 	exit(1);
 }
 
+// TAG: Handles the SIGINT and SIGTSTP signals which are sent when the user presses CTRL+C or CTRL+Z
 void signalHandler(int signal)
 {
 	if (signal == SIGINT || signal == SIGTSTP)
@@ -45,14 +47,3 @@ int main(int ac, char **av)
 		usage();
 	return (0);
 }
-
-// Naming convention:
-// 	- Classes: UpperCamelCase
-// 	- Functions: lowerCamelCase
-// 	- Variables: lower_snake_case
-// 	- Macros: UPPER_SNAKE_CASE
-// 	- Enums: UPPER_SNAKE_CASE
-// 	- Structs: UpperCamelCase
-// 	- Files: lower_snake_case
-// 	- Includes: lower_snake_case
-// 	- Defines: UPPER_SNAKE_CASE

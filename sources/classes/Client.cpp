@@ -11,22 +11,22 @@ const int &Client::getSocket() const { return (_client_socket); }
 const Request &Client::getRequest() const { return (request); }
 const struct sockaddr_in &Client::getAddress() const { return (_client_address); }
 /* Assinment operator */
-Client &Client::operator=(const Client &rhs)
+Client &Client::operator=(const Client &other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		this->_client_socket = rhs._client_socket;
-		this->_client_address = rhs._client_address;
-		this->request = rhs.request;
-		this->response = rhs.response;
-		this->server = rhs.server;
-		this->isHeadSent = rhs.isHeadSent;
-		this->isFileOpened = rhs.isFileOpened;
-		this->_rem = rhs._rem;
-		this->bytesRead = rhs.bytesRead;
-		this->content_len = rhs.content_len;
-		this->bytes_sent = rhs.bytes_sent;
-		this->flag = rhs.flag;
+		this->_client_socket = other._client_socket;
+		this->_client_address = other._client_address;
+		this->request = other.request;
+		this->response = other.response;
+		this->server = other.server;
+		this->isHeadSent = other.isHeadSent;
+		this->isFileOpened = other.isFileOpened;
+		this->_rem = other._rem;
+		this->bytesRead = other.bytesRead;
+		this->content_len = other.content_len;
+		this->bytes_sent = other.bytes_sent;
+		this->flag = other.flag;
 	}
 	return (*this);
 }

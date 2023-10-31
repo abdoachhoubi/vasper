@@ -16,14 +16,13 @@ private:
 	pid_t _cgi_pid;
 
 public:
-	int pipe_in[2];
-	int pipe_out[2];
+	int filex;
 
 	Cgi();
 	Cgi(std::string path);
 	~Cgi();
 	Cgi(Cgi const &other);
-	Cgi &operator=(Cgi const &rhs);
+	Cgi &operator=(Cgi const &other);
 
 	void initEnvCgi(Request &req, Location &location);
 	void initEnv(Request &req, Location &location);

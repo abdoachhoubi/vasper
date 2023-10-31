@@ -1,41 +1,19 @@
 #include "../../includes/main.hpp"
 
+// TAG: ORTHODOX CANONICAL FORM
+Server::Server() {}
 Server::~Server() {}
 Server::Server(const Server &other) { *this = other; }
-const std::string &Server::getServerName() { return nameServer; }
-const uint16_t &Server::getPort() { return port; }
-const in_addr_t &Server::getHost() { return host; }
-const size_t &Server::getClientMaxBodySize() { return clientMaxBodySize; }
-const std::vector<Location> &Server::getLocations() { return locations; }
-const std::string &Server::getRoot() { return root; }
-const std::string &Server::getIndex() { return index; }
-const bool &Server::getAutoindex() { return autoindex; }
-const std::string &Server::getPathErrorPage(error_pages key) { return _errorPages[key]; }
-int Server::getFd() { return listenFd; }
-void Server::setRoot(std::string root) { this->root = root; }
-void Server::setFd(int fd) { listenFd = fd; }
-void Server::setListen(std::string parametr) { port = atoi(parametr.c_str()); }
-void Server::setClientMaxBodySize(std::string parametr) { clientMaxBodySize = atoi(parametr.c_str()); }
-void Server::setUploadPath(std::string uploadPath) { this->_uploadPath = uploadPath; }
-std::string &Server::getUploadPath() { return _uploadPath; }
-void Server::setServerName(std::string server_name) { nameServer = server_name; }
-void Server::setIndex(std::string index) { this->index = index; }
-const std::map<error_pages, std::string> &Server::getErrorPages() { return _errorPages; }
-
-Server::Server()
-{
-}
-
 Server &Server::operator=(const Server &other)
 {
 	if (this != &other)
 	{
-		port = other.port;
-		host = other.host;
-		nameServer = other.nameServer;
-		root = other.root;
+		_port = other._port;
+		_host = other._host;
+		_serverName = other._serverName;
+		_root = other._root;
 		clientMaxBodySize = other.clientMaxBodySize;
-		index = other.index;
+		_index = other._index;
 		autoindex = other.autoindex;
 		_errorPages = other._errorPages;
 		locations = other.locations;
@@ -46,6 +24,39 @@ Server &Server::operator=(const Server &other)
 	return (*this);
 }
 
+// TAG: GETTERS
+const std::string &Server::getServerName() { return _serverName; }
+const uint16_t &Server::getPort() { return _port; }
+const in_addr_t &Server::getHost() { return _host; }
+const size_t &Server::getClientMaxBodySize() { return clientMaxBodySize; }
+const std::vector<Location> &Server::getLocations() { return locations; }
+const std::string &Server::getRoot() { return _root; }
+const std::string &Server::getIndex() { return _index; }
+const bool &Server::getAutoindex() { return autoindex; }
+const std::string &Server::getPathErrorPage(error_pages key) { return _errorPages[key]; }
+int Server::getFd() { return listenFd; }
+void Server::setRoot(std::string root) { this->_root = root; }
+std::string &Server::getUploadPath() { return _uploadPath; }
+const std::map<error_pages, std::string> &Server::getErrorPages() { return _errorPages; }
+const std::vector<Location>::iterator Server::getLocationKey(std::string key)
+{
+	std::vector<Location>::iterator it = locations.begin();
+	std::vector<Location>::iterator ite = locations.end();
+	for (; it != ite; ++it)
+	{
+		if (it->getPath() == key)
+			return it;
+	}
+	return it;
+}
+
+// TAG: SETTERS
+void Server::setFd(int fd) { listenFd = fd; }
+void Server::setListen(std::string parametr) { _port = atoi(parametr.c_str()); }
+void Server::setClientMaxBodySize(std::string parametr) { clientMaxBodySize = atoi(parametr.c_str()); }
+void Server::setUploadPath(std::string uploadPath) { this->_uploadPath = uploadPath; }
+void Server::setServerName(std::string server_name) { _serverName = server_name; }
+void Server::setIndex(std::string index) { this->_index = index; }
 void Server::setHost(std::string parametr)
 {
 	struct sockaddr_in addr;
@@ -54,9 +65,8 @@ void Server::setHost(std::string parametr)
 		parametr = "127.0.0.1";
 	if (inet_pton(AF_INET, parametr.c_str(), &addr.sin_addr) == 0)
 		throw std::runtime_error("Error: invalid host");
-	host = inet_addr(parametr.c_str());
+	_host = inet_addr(parametr.c_str());
 }
-
 void Server::setErrorPages(std::vector<std::string> &parametr)
 {
 	if (parametr.size() % 2 != 0)
@@ -73,14 +83,13 @@ void Server::setErrorPages(std::vector<std::string> &parametr)
 		error_pages key = static_cast<error_pages>(atoi(parametr[i].c_str()));
 		++i;
 		std::string value = parametr[i];
-		if (Server::getTypePath(value) != 2)
+		if (Server::checkTypePath(value) != 2)
 			throw std::runtime_error("Error: invalid error_page 4");
 		if (Server::accessFile(value, F_OK) < 0 || Server::accessFile(value, R_OK) < 0)
 			throw std::runtime_error("Error: invalid error_page");
 		_errorPages[key] = value;
 	}
 }
-
 void Server::setLocation(std::string nameLocation, std::vector<std::string> parametr)
 {
 	Location location;
@@ -97,7 +106,7 @@ void Server::setLocation(std::string nameLocation, std::vector<std::string> para
 			for (size_t i = 1; i < param.size(); i++)
 				value.push_back(param[i]);
 			if (!checkRoot)
-				location.setRootLocation(root);
+				location.setRootLocation(_root);
 			if (key == "root")
 			{
 				checkRoot = true;
@@ -129,7 +138,6 @@ void Server::setLocation(std::string nameLocation, std::vector<std::string> para
 	location.setPath(nameLocation);
 	locations.push_back(location);
 }
-
 void Server::setAutoindex(std::string autoindex)
 {
 	if (autoindex == "on")
@@ -140,6 +148,7 @@ void Server::setAutoindex(std::string autoindex)
 		throw std::runtime_error("Error: invalid autoindex");
 }
 
+// TAG: Checks if all error pages are valid
 bool Server::isValidErrorPages()
 {
 	std::map<error_pages, std::string>::iterator it = _errorPages.begin();
@@ -152,9 +161,9 @@ bool Server::isValidErrorPages()
 	return true;
 }
 
+// TAG: Check if location is valid when it comes to CGI params
 int Server::isValidLocation(Location &location) const
 {
-	// TODO: CHANGE CONDITION
 	if (location.getCGI())
 	{
 		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
@@ -172,7 +181,6 @@ int Server::isValidLocation(Location &location) const
 		int i = 0;
 		while (i < (int)cgi_exts.size())
 		{
-			// TODO <CHECK IF BIN FILE EXISTS>
 			location._ext_path.insert(std::make_pair(cgi_exts[i], paths[i]));
 			i++;
 		}
@@ -182,38 +190,7 @@ int Server::isValidLocation(Location &location) const
 	return 1;
 }
 
-const std::vector<Location>::iterator Server::getLocationKey(std::string key)
-{
-	std::vector<Location>::iterator it = locations.begin();
-	std::vector<Location>::iterator ite = locations.end();
-	for (; it != ite; ++it)
-	{
-		if (it->getPath() == key)
-			return it;
-	}
-	return it;
-}
-
-std::string strtrim(const std::string &input)
-{
-	size_t start = 0;
-	size_t end = input.length() - 1;
-
-	// Find the position of the first non-white space character from the beginning
-	while (start <= end && std::isspace(input[start]))
-	{
-		start++;
-	}
-
-	// Find the position of the first non-white space character from the end
-	while (end >= start && std::isspace(input[end]))
-	{
-		end--;
-	}
-
-	return input.substr(start, end - start + 1);
-}
-
+// TAG: Check if token is valid
 void Server::checkToken(std::string &parametr)
 {
 	std::string::size_type pos = parametr.find('#');
@@ -225,6 +202,7 @@ void Server::checkToken(std::string &parametr)
 	parametr = strtrim(parametr);
 }
 
+// TAG: Loop through all locations and check if they are valid
 bool Server::checkLocations() const
 {
 	std::vector<Location>::const_iterator it = locations.begin();
@@ -240,9 +218,9 @@ bool Server::checkLocations() const
 	return true;
 }
 
-// define is path is directory or file
-int Server::getTypePath(std::string const path)
+int Server::checkTypePath(std::string const path)
 {
+	// TAG: Check if path is directory or file
 	struct stat buf;
 
 	if (stat(path.c_str(), &buf) == -1)
@@ -254,7 +232,7 @@ int Server::getTypePath(std::string const path)
 	return 0;
 }
 
-// Check file exist and readable
+// TAG: Check if file is readable
 int Server::accessFile(std::string const path, int mode)
 {
 	if (access(path.c_str(), mode) == -1)
@@ -262,7 +240,7 @@ int Server::accessFile(std::string const path, int mode)
 	return 0;
 }
 
-// Read file to string
+// TAG: Read file and return it as a string
 std::string Server::fileToString(std::string path)
 {
 	std::string file;
@@ -277,11 +255,12 @@ std::string Server::fileToString(std::string path)
 	return file;
 }
 
+// TAG: Check if file is readable and exists
 int Server::isReadableAndExist(std::string const path, std::string const index)
 {
 	int type;
 	std::string path_p = path + "/" + index;
-	type = getTypePath(path_p);
+	type = checkTypePath(path_p);
 	if (type == -1)
 		return -1;
 	if (type == 1)
@@ -296,6 +275,7 @@ int Server::isReadableAndExist(std::string const path, std::string const index)
 	return 0;
 }
 
+// TAG: Creates a server based on the information in the server object
 void Server::createServer(void)
 {
 	int option_value = 1;
@@ -311,8 +291,8 @@ void Server::createServer(void)
 	}
 	memset(&serveraddress, 0, sizeof(serveraddress));
 	serveraddress.sin_family = AF_INET;
-	serveraddress.sin_addr.s_addr = host;
-	serveraddress.sin_port = htons(port);
+	serveraddress.sin_addr.s_addr = _host;
+	serveraddress.sin_port = htons(_port);
 	if (bind(listenFd, (struct sockaddr *)&serveraddress, sizeof(serveraddress)) == -1)
 	{
 		std::cerr << "webserv: bind error " << strerror(errno) << " Closing ...." << std::endl;

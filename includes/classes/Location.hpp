@@ -7,7 +7,7 @@ class Location
 	public:
 		Location();
 		Location(const Location &other);
-		Location &operator=(const Location &rhs);
+		Location &operator=(const Location &other);
 		~Location();
 
 		void setPath(std::string parametr);
