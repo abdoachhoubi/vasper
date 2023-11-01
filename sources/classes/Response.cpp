@@ -130,10 +130,8 @@ bool Response::isResourceDeletable(const std::string &resourcePath)
 
 bool Response::deleteResource(const std::string &resourcePath)
 {
-	// Check if the resource is deletable
 	if (isResourceDeletable(resourcePath))
 	{
-		// Attempt to delete the resource
 		if (remove(resourcePath.c_str()) == 0)
 			return true;
 	}
@@ -146,7 +144,6 @@ bool Response::fileExists(const std::string &f)
 	return (stat(f.c_str(), &buffer) == 0);
 }
 
-// saveDataToFile
 void Response::SaveDataToFile(const std::string &filePath, const std::string &data)
 {
 	std::ofstream file(filePath.c_str(), std::ios::binary);
@@ -269,7 +266,6 @@ int Response::getController(Location location)
 {
 	if (gettype() == "FILE")
 	{
-		// CGI STARTS HERE
 		std::string file_extension = getPath().substr(getPath().find_last_of(".") + 1);
 		std::vector<std::string> exts = location.getCgiExtension();
 		std::vector<std::string> paths = location.getCgiPath();
@@ -416,7 +412,7 @@ int Response::deleteController(Location location)
 		if (deleteResource(resourcePath))
 		{
 			// Resource deleted successfully
-			std::string res = "HTTP/1.1 SUCCESS OK\r\n";
+			std::string res = "HTTP/1.1 200 OK\r\n";
 			res += "Server: AstroServer\r\n";
 			res += "Content-Length: 0\r\n";
 			res += "Content-Type: application/json\r\n";
@@ -437,7 +433,7 @@ int Response::deleteController(Location location)
 	}
 	else
 	{
-		std::string res = "HTTP/1.1 NOT_FOUND Not Found\r\n";
+		std::string res = "HTTP/1.1 404 Not Found\r\n";
 		res += "Content-Length: 0\r\n";
 		res += "Content-Type: application/json\r\n";
 		res += "\r\n";
@@ -446,7 +442,7 @@ int Response::deleteController(Location location)
 	}
 }
 
-int Response::redirect(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path)
+int Response::checkRedirection(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path)
 {
 	std::vector<Location>::iterator itx;
 	bool flag = true;
@@ -501,7 +497,7 @@ int Response::redirect(std::vector<Location> loc, std::vector<std::string> sub_u
 	return (0);
 }
 
-int Response::matchLocation(std::vector<Location> loc, std::vector<std::string> sub_uris)
+int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uris)
 {
 	bool flag = true;
 	std::string _req_path = _req.getPath();
@@ -516,18 +512,13 @@ int Response::matchLocation(std::vector<Location> loc, std::vector<std::string> 
 		{
 			if (!flag)
 				break;
-			// remove last character from sub_uri
 			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
 			if (sub_uri == "")
 				sub_uri = "/";
 			if (it->getPath() == sub_uri)
 			{
 				if (it->getRootLocation() != "")
-				{
-					// replace the req path matched location with the location's root path
-					// example: if _req_path is "/in/lol.html" and the location that was matched is "/in" then "/in" should be replaced with it->getRootPath()
 					_req_path = _req_path.replace(0, sub_uri.length(), it->getRootLocation());
-				}
 				else
 					_req_path = _req_path.replace(0, sub_uri.length() - 1, _server_conf.getRoot());
 				flag = false;
@@ -566,13 +557,13 @@ int Response::respond()
 	std::vector<Location> loc = _server_conf.getLocations();
 	std::vector<std::string> sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
-	if (redirect(loc, sub_uris, loc_path))
+	if (checkRedirection(loc, sub_uris, loc_path))
 		return (0);
 
 	sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
 
-	if (matchLocation(loc, sub_uris))
+	if (router(loc, sub_uris))
 		return (0);
 	set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
 	return (0);
@@ -668,30 +659,16 @@ std::string Response::statusTextGen(int code)
 		return "Non-Authoritative Information";
 	case NO_CONTENT:
 		return "No Content";
-	case 205:
-		return "Reset Content";
-	case 206:
-		return "Partial Content";
-	case 300:
-		return "Multiple Choices";
 	case MOVED_PERMANENTLY:
 		return "Moved Permanently";
 	case 302:
 		return "Found";
-	case 303:
-		return "See Other";
 	case 304:
 		return "Not Modified";
-	case 305:
-		return "Use Proxy";
-	case 307:
-		return "Temporary Redirect";
 	case BAD_REQUEST:
 		return "Bad Request";
 	case 401:
 		return "Unauthorized";
-	case 402:
-		return "Payment Required";
 	case FORBIDDEN:
 		return "Forbidden";
 	case NOT_FOUND:
@@ -704,24 +681,10 @@ std::string Response::statusTextGen(int code)
 		return "Proxy Authentication Required";
 	case 408:
 		return "Request Timeout";
-	case 409:
-		return "Conflict";
-	case 410:
-		return "Gone";
-	case 411:
-		return "Length Required";
-	case 412:
-		return "Precondition Failed";
 	case REQUEST_ENTITY_TOO_LARGE:
 		return "Payload Too Large";
 	case 414:
 		return "URI Too Long";
-	case 415:
-		return "Unsupported Media Type";
-	case 416:
-		return "Range Not Satisfiable";
-	case 417:
-		return "Expectation Failed";
 	case INTERNAL_SERVER_ERROR:
 		return "Internal Server Error";
 	case NOT_IMPLEMENTED:

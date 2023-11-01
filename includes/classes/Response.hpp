@@ -49,8 +49,8 @@ public:
 	std::string decodePath(std::string path);
 	std::string statusTextGen(int code);
 	std::string generateErrorResponse(error_pages code, Server server);
-	int redirect(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path);
-	int matchLocation(std::vector<Location> loc, std::vector<std::string> sub_uris);
+	int checkRedirection(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path);
+	int router(std::vector<Location> loc, std::vector<std::string> sub_uris);
 
 	// Controllers
 	int getController(Location location);

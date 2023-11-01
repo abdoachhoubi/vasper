@@ -23,7 +23,6 @@ class Cgi
 		Cgi(Cgi const &other);
 		Cgi &operator=(Cgi const &other);
 
-		void initEnvCgi(Request &req, Location &location);
 		void initEnv(Request &req, Location &location);
 		void execute(short &error_code);
 		void clear();

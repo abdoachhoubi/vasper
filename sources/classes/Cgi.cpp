@@ -70,60 +70,6 @@ const std::map<std::string, std::string> &Cgi::getEnv() const {return (this->_en
 const pid_t &Cgi::getCgiPid() const {return (this->_cgi_pid);}
 const std::string &Cgi::getCgiPath() const {return (this->_cgi_path);}
 
-void Cgi::initEnvCgi(Request &req, Location &location)
-{
-	std::string cgi_exec = ("cgi-bin/" + location.getCgiPath()[0]).c_str();
-	char *cwd = getcwd(NULL, 0);
-	if (_cgi_path[0] != '/')
-	{
-		std::string tmp(cwd);
-		tmp.append("/");
-		if (_cgi_path.length() > 0)
-			_cgi_path.insert(0, tmp);
-	}
-	if (req.getMethod() == POST)
-	{
-		std::stringstream out;
-		out << req.getBody().length();
-		this->_env["CONTENT_LENGTH"] = out.str();
-		this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
-	}
-
-	this->_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
-	this->_env["SCRIPT_NAME"] = cgi_exec;
-	this->_env["SCRIPT_FILENAME"] = this->_cgi_path;
-	this->_env["PATH_INFO"] = this->_cgi_path;
-	this->_env["PATH_TRANSLATED"] = this->_cgi_path;
-	this->_env["REQUEST_URI"] = this->_cgi_path;
-	this->_env["SERVER_NAME"] = req.getHeader("host");
-	this->_env["SERVER_PORT"] = "3000";
-	this->_env["REQUEST_METHOD"] = req.getMethodStr();
-	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->_env["REDIRECT_STATUS"] = "SUCCESS";
-	this->_env["SERVER_SOFTWARE"] = "vasper";
-
-	std::map<std::string, std::string> request_headers = req.getHeaders();
-	for (std::map<std::string, std::string>::iterator it = request_headers.begin();
-		 it != request_headers.end(); ++it)
-	{
-		std::string name = it->first;
-		std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-		std::string key = "HTTP_" + name;
-		_env[key] = it->second;
-	}
-	this->_ch_env = (char **)calloc(sizeof(char *), this->_env.size() + 1);
-	std::map<std::string, std::string>::const_iterator it = this->_env.begin();
-	for (int i = 0; it != this->_env.end(); it++, i++)
-	{
-		std::string tmp = it->first + "=" + it->second;
-		this->_ch_env[i] = strdup(tmp.c_str());
-	}
-	this->_argv = (char **)malloc(sizeof(char *) * 3);
-	this->_argv[0] = strdup(cgi_exec.c_str());
-	this->_argv[1] = strdup(this->_cgi_path.c_str());
-	this->_argv[2] = NULL;
-}
-
 /* initialization environment variable */
 void Cgi::initEnv(Request &req, Location &location)
 {
