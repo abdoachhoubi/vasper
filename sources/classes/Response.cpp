@@ -497,7 +497,11 @@ int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uri
 					root += "/";
 				_path = _req_path.replace(0, sub_uri.length(), root);
 				flag = false;
-				isResourceFound(_path);
+				if (!isResourceFound(_path))
+				{
+					set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
+					return (1);
+				}
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
 				{
 					set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
@@ -682,7 +686,7 @@ std::string Response::generateErrorResponse(error_pages code, Server server)
 	std::map<error_pages, std::string> err_pages = server.getErrorPages();
 	if (err_pages[code] != "" && _req.getMethodStr() == "GET")
 	{
-		std::string path_to_error_page = server.getRoot() + "/" + err_pages[code];
+		std::string path_to_error_page = err_pages[code];
 		std::ifstream file(path_to_error_page.c_str(), std::ios::binary);
 		if (!file)
 			return (generateErrorResponse(INTERNAL_SERVER_ERROR, server));

@@ -84,6 +84,7 @@ void Server::setErrorPages(std::vector<std::string> &parametr)
 		error_pages key = static_cast<error_pages>(atoi(parametr[i].c_str()));
 		++i;
 		std::string value = parametr[i];
+		value = (_root[_root.size() - 1] == '/') ? _root + value : _root + "/" + value;
 		if (Server::checkTypePath(value) != 2)
 			throw std::runtime_error("Error: invalid error_page 4");
 		if (Server::accessFile(value, F_OK) < 0 || Server::accessFile(value, R_OK) < 0)
@@ -224,7 +225,6 @@ int Server::checkTypePath(std::string const path)
 {
 	// TAG: Check if path is directory or file
 	struct stat buf;
-
 	if (stat(path.c_str(), &buf) == -1)
 		return -1;
 	if (S_ISDIR(buf.st_mode))
