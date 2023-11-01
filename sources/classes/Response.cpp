@@ -550,6 +550,7 @@ int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uri
 
 int Response::respond()
 {
+	printRequest();
 	_req.setPath(decodePath(_req.getPath()));
 	std::string loc_path = _req.getPath();
 	if (loc_path[loc_path.length() - 1] == '/')
@@ -817,4 +818,10 @@ int Response::handleCgi(Location location)
 	set_headers(_response);
 	remove("./vasper.cgi");
 	return (0);
+}
+
+// TAG: Request tester
+void Response::printRequest()
+{
+	std::cout << _req.getHeader("cookie") << std::endl;
 }
