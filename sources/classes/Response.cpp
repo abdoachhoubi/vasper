@@ -34,6 +34,9 @@ std::string Response::get_headers() { return (_headers); }
 bool Response::isResourceFound(const std::string &fullPath)
 {
 	struct stat fileStat;
+	// DEBUGGING STARTS
+	std::cout << "PRINTING FULL PATH: " << fullPath << std::endl;
+	// DEBUGGING ENDS
 	if (stat(fullPath.c_str(), &fileStat) == 0)
 	{
 		if (S_ISREG(fileStat.st_mode))
@@ -513,16 +516,15 @@ int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uri
 			if (!flag)
 				break;
 			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
-			if (sub_uri == "")
-				sub_uri = "/";
+			if (sub_uri[sub_uri.length() - 1] != '/')
+				sub_uri += "/";
 			if (it->getPath() == sub_uri)
 			{
-				if (it->getRootLocation() != "")
-					_req_path = _req_path.replace(0, sub_uri.length(), it->getRootLocation());
-				else
-					_req_path = _req_path.replace(0, sub_uri.length() - 1, _server_conf.getRoot());
+				std::string root = it->getRootLocation() != "" ? it->getRootLocation() : _server_conf.getRoot();
+				if (root[root.length() - 1] != '/')
+					root += "/";
+				_path = _req_path.replace(0, sub_uri.length(), root);
 				flag = false;
-				_path = _req_path;
 				isResourceFound(_path);
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
 				{

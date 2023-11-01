@@ -62,46 +62,42 @@ Cgi &Cgi::operator=(const Cgi &other)
 }
 
 /*Set functions */
-void Cgi::setCgiPid(pid_t cgi_pid) {this->_cgi_pid = cgi_pid;}
-void Cgi::setCgiPath(const std::string &cgi_path) {this->_cgi_path = cgi_path;}
+void Cgi::setCgiPid(pid_t cgi_pid) { this->_cgi_pid = cgi_pid; }
+void Cgi::setCgiPath(const std::string &cgi_path) { this->_cgi_path = cgi_path; }
 
 /* Get functions */
-const std::map<std::string, std::string> &Cgi::getEnv() const {return (this->_env);}
-const pid_t &Cgi::getCgiPid() const {return (this->_cgi_pid);}
-const std::string &Cgi::getCgiPath() const {return (this->_cgi_path);}
+const std::map<std::string, std::string> &Cgi::getEnv() const { return (this->_env); }
+const pid_t &Cgi::getCgiPid() const { return (this->_cgi_pid); }
+const std::string &Cgi::getCgiPath() const { return (this->_cgi_path); }
 
 /* initialization environment variable */
 void Cgi::initEnv(Request &req, Location &location)
 {
-	int poz;
 	std::string extension;
 	std::string ext_path;
 
 	extension = this->_cgi_path.substr(this->_cgi_path.find("."));
 	ext_path = location._ext_path[extension];
-
-	this->_env["AUTH_TYPE"] = "Basic";
-	this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
-	this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
 	this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-	poz = findStart(this->_cgi_path, "cgi-bin/");
 	this->_env["SCRIPT_NAME"] = this->_cgi_path;
-	this->_env["SCRIPT_FILENAME"] = ((poz < 0 || (size_t)(poz + 8) > this->_cgi_path.size()) ? "" : this->_cgi_path.substr(poz + 8, this->_cgi_path.size())); // check dif cases after put right parametr from the response
-	this->_env["PATH_INFO"] = getPathInfo(req.getPath(), location.getCgiExtension());
-	this->_env["PATH_TRANSLATED"] = location.getRootLocation() + (this->_env["PATH_INFO"] == "" ? "/" : this->_env["PATH_INFO"]);
+	this->_env["SCRIPT_FILENAME"] = this->_cgi_path;
+	this->_env["PATH_INFO"] = this->_cgi_path;
 	this->_env["QUERY_STRING"] = decode(req.getQuery());
-	this->_env["REMOTE_ADDR"] = req.getHeader("host");
-	poz = findStart(req.getHeader("host"), ":");
-	this->_env["SERVER_NAME"] = (poz > 0 ? req.getHeader("host").substr(0, poz) : "");
-	this->_env["SERVER_PORT"] = (poz > 0 ? req.getHeader("host").substr(poz + 1, req.getHeader("host").size()) : "");
+	this->_env["HTTP_COOKIE"] = req.getHeader("Cookie");
+	this->_env["HTTP_HOST"] = req.getHeader("Host");
+	this->_env["HTTP_PORT"] = req.getHeader("3004");
+	this->_env["HTTP_USER_AGENT"] = req.getHeader("User-Agent");
+	this->_env["REDIRECT_STATUS"] = "200";
 	this->_env["REQUEST_METHOD"] = req.getMethodStr();
-	this->_env["HTTP_COOKIE"] = req.getHeader("cookie");
-	this->_env["DOCUMENT_ROOT"] = location.getRootLocation();
-	this->_env["REQUEST_URI"] = req.getPath() + req.getQuery();
+	this->_env["REMOTE_ADDR"] = req.getHeader("Host");
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->_env["REDIRECT_STATUS"] = "SUCCESS";
-	this->_env["SERVER_SOFTWARE"] = "vasper";
-
+	this->_env["REQUEST_URI"] = req.getPath() + req.getQuery();
+	this->_env["SERVER_SOFTWARE"] = req.getServerName();
+	if (req.getMethodStr() == "POST")
+	{
+		this->_env["CONTENT_LENGTH"] = req.getHeader("Content-Length");
+		this->_env["CONTENT_TYPE"] = req.getHeader("Content-Type");
+	}
 	this->_ch_env = (char **)calloc(sizeof(char *), this->_env.size() + 1);
 	std::map<std::string, std::string>::const_iterator it = this->_env.begin();
 	for (int i = 0; it != this->_env.end(); it++, i++)
