@@ -1,41 +1,6 @@
 #include "../../includes/main.hpp"
 
-/* Constructor */
-Cgi::Cgi()
-{
-	this->_cgi_pid = -1;
-	this->_exit_status = 0;
-	this->_cgi_path = "";
-	this->_ch_env = NULL;
-	this->_argv = NULL;
-}
-
-Cgi::Cgi(std::string path)
-{
-	this->_cgi_pid = -1;
-	this->_exit_status = 0;
-	this->_cgi_path = path;
-	this->_ch_env = NULL;
-	this->_argv = NULL;
-}
-
-Cgi::~Cgi()
-{
-
-	if (this->_ch_env)
-	{
-		for (int i = 0; this->_ch_env[i]; i++)
-			free(this->_ch_env[i]);
-		free(this->_ch_env);
-	}
-	if (this->_argv)
-	{
-		for (int i = 0; this->_argv[i]; i++)
-			free(_argv[i]);
-		free(_argv);
-	}
-	this->_env.clear();
-}
+~~
 
 Cgi::Cgi(const Cgi &other)
 {

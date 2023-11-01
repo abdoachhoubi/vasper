@@ -71,10 +71,8 @@ public:
 private:
 	Request _req;
 	Server _server_conf;
-
 	std::string contentType;
 	std::string _type;
-	// bool	_autoindex;
 	std::string _headers;
 	std::string _path;
 	std::string statusText;
@@ -84,8 +82,6 @@ private:
 
 	short _cgi_state;
 	int _cgi_fd[2];
-	// size_t			_cgi_response_length;
 
 	int handleCgi(Location location);
-	int handleCgiTemp(std::string &);
 };

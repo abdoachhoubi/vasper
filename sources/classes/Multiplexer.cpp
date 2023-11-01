@@ -60,8 +60,8 @@ void Multiplexer::runServers()
 
 		if (select(fdmax + 1, &_recv_temp, &_write_temp, NULL, NULL) < 0)
 		{
-			std::cerr << "webserv: select error " << strerror(errno) << std::endl;
-			continue;
+			std::cerr << "Select failed: Unable to monitor file descriptor." << std::endl;
+			continue ;
 		}
 		for (int i = 2; i <= fdmax; i++)
 		{
@@ -95,7 +95,7 @@ void Multiplexer::readRequest(const int &i, Client &client)
 	bytes_read = read(i, buffer, BUFFER_SIZE);
 	if (bytes_read < 0)
 	{
-		std::cerr << "webserv: fd " << i << " read error " << strerror(errno) << std::endl;
+		std::cerr << "webserv: fd " << i << "Read failed: Unable to read data from the file." << std::endl;
 		closeConnection(i);
 		return;
 	}
@@ -151,7 +151,7 @@ void Multiplexer::buildTheResponse(Client &client)
 			client.file.open(client.response.getPath().c_str(), std::ios::in | std::ios::binary);
 			client.isFileOpened = true;
 		}
-		client.file.read(buffer, BUFFER_SIZE - 1);
+		client.file.readsome(buffer, BUFFER_SIZE);
 		client.bytesRead = client.file.gcount();
 		if (client.bytesRead < 0)
 			std::cerr << "ERROR HERE : IN READ BYTES " << std::endl;
@@ -167,7 +167,6 @@ void Multiplexer::sendResponse(const int &i, Client &client)
 	ssize_t result = write(i, client.response._response.c_str(), client.response._response.size());
 	if (client.flag == true)
 		client.bytes_sent += result;
-
 	if (result == -1)
 		closeConnection(i);
 	else if (result != (ssize_t)client.response._response.size())
@@ -192,14 +191,13 @@ void Multiplexer::acceptNewConnection(Server &serv)
 	if ((client_sock = accept(serv.getFd(), (struct sockaddr *)&client_address,
 							  (socklen_t *)&client_address_size)) == -1)
 	{
-		std::cerr << "webserv: accept error " << strerror(errno) << std::endl;
-		return;
+		std::cerr << "Accept failed: Unable to accept the client connection." << std::endl; return ;
 	}
 	std::cout << YELLOW_BOLD << "Assigned Socket " << client_sock << " to connection from " << inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN) << RESET << std::endl;
 	addToSet(client_sock, _recv_fds);
 	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
 	{
-		std::cerr << "webserv: fcntl error " << strerror(errno) << std::endl;
+		std::cerr << "Fcntl failed: Unable to set file descriptor options." << std::endl;
 		removeFromSet(client_sock, _recv_fds);
 		close(client_sock);
 		return;

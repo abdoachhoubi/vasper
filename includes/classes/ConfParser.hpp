@@ -5,23 +5,24 @@
 class Server;
 
 class ConfParser {
-	public:
-		ConfParser();
-		~ConfParser();
-
-		void					parse(const std::string &config_file);
-		void					splitServers(std::string &content);
-		size_t					startServer(size_t start, std::string &content);
-		size_t					endServer(size_t start, std::string &content);
-		void					createServer(std::string &config, Server &server);
-		std::vector<Server>		getServers();
-		int						print();
-
-		static int getTypePath(std::string const path);
-		static int checkFile(std::string const path, int mode);
 
 	private:
 		std::vector<Server>			servers;
 		std::vector<std::string>	serv_conf;
 		size_t						nbr_serv;
+	
+	public:
+		ConfParser();
+		~ConfParser();
+
+		std::vector<Server>		getServers();
+		void					parse(const std::string &config_file);
+		void					splitServers(std::string &content);
+		size_t					startServer(size_t start, std::string &content);
+		size_t					endServer(size_t start, std::string &content);
+		void					createServer(std::string &config, Server &server);
+		int						print();
+
+		static int getTypePath(std::string const path);
+		static int checkFile(std::string const path, int mode);
 };

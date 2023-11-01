@@ -281,7 +281,7 @@ void Server::createServer(void)
 	int option_value = 1;
 	if ((listenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		std::cerr << "webserv: socket error " << strerror(errno) << " Closing ...." << std::endl;
+		std::cerr << "Listen failed: Unable to listen on the socket." << " Closing ...." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int)) < 0)
@@ -295,18 +295,18 @@ void Server::createServer(void)
 	serveraddress.sin_port = htons(_port);
 	if (bind(listenFd, (struct sockaddr *)&serveraddress, sizeof(serveraddress)) == -1)
 	{
-		std::cerr << "webserv: bind error " << strerror(errno) << " Closing ...." << std::endl;
+		std::cerr << "Bind failed: Unable to bind the socket." << " Closing ...." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (listen(listenFd, SOMAXCONN) == -1)
 	{
-		std::cerr << "webserv: listen error: " << strerror(errno) << std::endl;
+		std::cerr << "Listen failed: Unable to listen on the socket." << std::endl;
 		close(listenFd);
 		exit(EXIT_FAILURE);
 	}
 	if (fcntl(listenFd, F_SETFL, O_NONBLOCK) < 0)
 	{
-		std::cerr << "webserv: fcntl error: " << strerror(errno) << std::endl;
+		std::cerr << "Fcntl failed: Unable to set file descriptor options." << std::endl;
 		close(listenFd);
 		exit(EXIT_FAILURE);
 	}
