@@ -594,8 +594,6 @@ std::string &Request::getPath() {return (_path);}
 
 std::string &Request::getQuery() {return (_query);}
 
-std::string &Request::getFragment() {return (_fragment);}
-
 std::string Request::getMethodStr() {return (_method_str[_method]);}
 
 std::string Request::getHeader(std::string header) {return (_request_headers[header]);}
@@ -604,15 +602,9 @@ std::string &Request::getBody() {return (_body_str);}
 
 std::string &Request::getBoundary() {return (this->_boundary);}
 
-std::string Request::getVersion() {return (to_string(_ver_major) + "." + to_string(_ver_minor));}
-
 std::string Request::getServerName() {return (this->_server_name);}
 
-std::vector<u_int8_t> &Request::getBodyVector() {return (_body);}
-
 const std::map<std::string, std::string> &Request::getHeaders() const {return (this->_request_headers);}
-
-void  Request::cutReqBody(int bytes) {_body_str = _body_str.substr(bytes);}
 
 bool  Request::getMultiformFlag() {return (this->_multiform_flag);}
 
@@ -628,16 +620,6 @@ bool  Request::parsingCompleted() {return (_state == Parsing_Done);}
 
 short Request::getErrorCode() {return (_error_code);}
 
-std::string Request::getUri()
-{
-	std::string uri = _path;
-	if (_query.length() > 0)
-		uri += "?" + _query;
-	if (_fragment.length() > 0)
-		uri += "#" + _fragment;
-	return (uri);
-}
-
 void    Request::setBody(std::string body)
 {
     _body.clear();
@@ -650,26 +632,6 @@ void    Request::setHeader(std::string &name, std::string &value)
     trimStr(value);
     toLower(name);
     _request_headers[name] = value;
-}
-
-void        Request::printParserReq()
-{
-	std::cout << GREEN_BOLD  "PARSED REQUEST:" RESET << std::endl;
-	std::cout << BLUE_BOLD "START OF REQUEST" << GREEN_BOLD"--------------------------------------------" RESET << std::endl;
-	std::string path = _path + (_query.size() > 0 ? "?" + _query + (_fragment.size() > 0 ? "#" + _fragment : "") : "");
-
-	std::cout << "Method:\t\t" <<  _method_str[_method] << std::endl;
-	std::cout << "Path:\t\t" << path << std::endl;
-	std::cout << "Version:\t" << "HTTP/" << _ver_major << "." << _ver_minor << std::endl;
-
-	std::cout << "Headers:" << std::endl;
-	for (std::map<std::string, std::string>::iterator it = _request_headers.begin(); it != _request_headers.end(); ++it)
-		std::cout << "\t\t" << it->first + ": " + it->second << std::endl;
-
-	std::cout << "Body:" << std::endl << "\t\t";
-	for (std::vector<u_int8_t>::iterator it = _body.begin(); it != _body.end(); ++it)
-		std::cout << *it;
-	std::cout << std::endl << BLUE_BOLD "END OF REQUEST\t" << GREEN_BOLD"--------------------------------------------" RESET << std::endl;
 }
 
 void        Request::_handle_headers()
@@ -703,7 +665,6 @@ void        Request::_handle_headers()
 }
 
 /* Reset object variables to recive new request */
-
 void    Request::clear()
 {
     _path.clear();
@@ -729,15 +690,3 @@ void    Request::clear()
     _chunked_flag = false;
     _multiform_flag = false;
 }
-/* Checks the value of header "Connection". If keep-alive, don't close the connection. */
-
-bool        Request::keepAlive()
-{
-    if (_request_headers.count("connection"))
-    {
-        if (_request_headers["connection"].find("close", 0) != std::string::npos)
-            return (false);
-    }
-    return (true);
-}
-

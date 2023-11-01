@@ -46,38 +46,6 @@ void Multiplexer::removeFromSet(const int i, fd_set &set)
 		fdmax--;
 }
 
-void Multiplexer::runServers()
-{
-	fd_set _recv_temp;
-	fd_set _write_temp;
-
-	init_fds();
-
-	while (true)
-	{
-		_recv_temp = _recv_fds;
-		_write_temp = _write_fds;
-
-		if (select(fdmax + 1, &_recv_temp, &_write_temp, NULL, NULL) < 0)
-		{
-			std::cerr << "Select failed: Unable to monitor file descriptor." << std::endl;
-			continue ;
-		}
-		for (int i = 2; i <= fdmax; i++)
-		{
-			if (FD_ISSET(i, &_write_temp))
-				sendResponse(i, _clients_map[i]);
-			else if (FD_ISSET(i, &_recv_temp))
-			{
-				if (_servers_map.count(i))
-					acceptNewConnection(_servers_map.find(i)->second);
-				else
-					readRequest(i, _clients_map[i]);
-			}
-		}
-	}
-}
-
 void Multiplexer::closeConnection(const int i)
 {
 	if (FD_ISSET(i, &_write_fds))
@@ -202,6 +170,37 @@ void Multiplexer::acceptNewConnection(Server &serv)
 		close(client_sock);
 		return;
 	}
-	new_client.setSocket(client_sock);
 	_clients_map[client_sock] = new_client;
+}
+
+void Multiplexer::runServers()
+{
+	fd_set _recv_temp;
+	fd_set _write_temp;
+
+	init_fds();
+
+	while (true)
+	{
+		_recv_temp = _recv_fds;
+		_write_temp = _write_fds;
+
+		if (select(fdmax + 1, &_recv_temp, &_write_temp, NULL, NULL) < 0)
+		{
+			std::cerr << "Select failed: Unable to monitor file descriptor." << std::endl;
+			continue ;
+		}
+		for (int i = 2; i <= fdmax; i++)
+		{
+			if (FD_ISSET(i, &_write_temp))
+				sendResponse(i, _clients_map[i]);
+			else if (FD_ISSET(i, &_recv_temp))
+			{
+				if (_servers_map.count(i))
+					acceptNewConnection(_servers_map.find(i)->second);
+				else
+					readRequest(i, _clients_map[i]);
+			}
+		}
+	}
 }

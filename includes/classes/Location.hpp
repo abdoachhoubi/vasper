@@ -57,7 +57,7 @@ class Location
 		std::string					root;
 		bool						autoindex;
 		std::string					index;
-		std::vector<bool>			_methods; // GET POST DELETE
+		std::vector<bool>			_methods;
 		std::string					_return;
 		std::string					_alias;
 		std::vector<std::string>	cgi_path;

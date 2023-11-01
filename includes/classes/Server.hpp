@@ -77,16 +77,16 @@ public:
 	void createServer();
 
 private:
-	uint16_t _port;
-	in_addr_t _host;
-	std::string _serverName;
-	std::string _root;
-	unsigned long clientMaxBodySize;
-	std::string _index;
-	bool autoindex;
 	std::map<error_pages, std::string> _errorPages;
 	std::vector<Location> locations;
-	struct sockaddr_in serveraddress;
-	int listenFd;
+	std::string _serverName;
+	std::string _root;
 	std::string _uploadPath;
+	std::string _index;
+	uint16_t _port;
+	in_addr_t _host;
+	unsigned long clientMaxBodySize;
+	struct sockaddr_in serveraddress;
+	bool autoindex;
+	int  listenFd;
 };

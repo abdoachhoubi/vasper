@@ -3,13 +3,6 @@
 Client::Client() {}
 Client::~Client() {}
 Client::Client(const Client &other) { *this = other; }
-void Client::setSocket(int &sock) { _client_socket = sock; }
-void Client::clearClient() { request.clear(); }
-void Client::setAddress(sockaddr_in &addr) { _client_address = addr; }
-void Client::setServer(Server &server) { response.setServer(server); }
-const int &Client::getSocket() const { return (_client_socket); }
-const Request &Client::getRequest() const { return (request); }
-const struct sockaddr_in &Client::getAddress() const { return (_client_address); }
 /* Assinment operator */
 Client &Client::operator=(const Client &other)
 {

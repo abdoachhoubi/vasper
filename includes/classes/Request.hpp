@@ -49,7 +49,6 @@ class Request
         REQ_METHOD                                  &getMethod();
         std::string                                 &getPath();
         std::string                                 &getQuery();
-        std::string                                 &getFragment();
         std::string                                 getHeader(std::string header);
 		const std::map<std::string, std::string>    &getHeaders() const;
 		std::string                                 getMethodStr();
@@ -57,10 +56,7 @@ class Request
         std::string                                 getServerName();
         std::string                                 &getBoundary();
         bool                                        getMultiformFlag();
-		std::string								 	getVersion();
-		std::string                                 getUri();
 		short                                       getErrorCode();
-		std::vector<u_int8_t>						&getBodyVector();
         
         void        setMethod(REQ_METHOD &);
         void        setHeader(std::string &, std::string &);
@@ -70,33 +66,30 @@ class Request
 
         void        parse(char *data, size_t size);
         bool        parsingCompleted();
-        void        printParserReq();
         void        clear();
         short       errorCode();
-        bool        keepAlive();
-        void        cutReqBody(int bytes);
 
     private:
         std::string                         _path;
         std::string                         _query;
         std::string                         _fragment;
-        std::map<std::string, std::string>  _request_headers;
-        std::vector<u_int8_t>               _body;
-        std::string                         _boundary;
-        REQ_METHOD                          _method;
-        std::map<u_int8_t, std::string>     _method_str;
-        ParsingState                        _state;
-        size_t                              _max_body_size;
-        size_t                              _body_length;
-        short                               _error_code;
-        size_t                              _chunk_length;
         std::string                         _storage;
         std::string                         _key_storage;
+        std::string                         _boundary;
+        std::string                         _server_name;
+        std::string                         _body_str;
+        std::vector<u_int8_t>               _body;
+        std::map<std::string, std::string>  _request_headers;
+        std::map<u_int8_t, std::string>     _method_str;
+        ParsingState                        _state;
+        REQ_METHOD                          _method;
+        short                               _error_code;
         short                               _method_index;
         u_int8_t                            _ver_major;
         u_int8_t                            _ver_minor;
-        std::string                         _server_name;
-        std::string                         _body_str;
+		size_t                              _max_body_size;
+        size_t                              _body_length;
+        size_t                              _chunk_length;
 
         // flags
         bool                                _fields_done_flag;
@@ -107,5 +100,4 @@ class Request
         bool                                _multiform_flag;
 
         void            					_handle_headers();
-
 };
