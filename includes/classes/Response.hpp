@@ -56,7 +56,7 @@ public:
 	// Controllers
 	int getController(Location location);
 	int postController(Location location);
-	int deleteController(Location location);
+	int deleteController();
 
 	int getCgiState();
 	void setCgiState(int);

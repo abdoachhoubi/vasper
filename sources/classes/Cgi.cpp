@@ -84,19 +84,19 @@ void Cgi::initEnv(Request &req, Location &location)
 	this->_env["PATH_INFO"] = this->_cgi_path;
 	this->_env["QUERY_STRING"] = decode(req.getQuery());
 	this->_env["HTTP_COOKIE"] = req.getHeader("Cookie");
-	this->_env["HTTP_HOST"] = req.getHeader("Host");
-	this->_env["HTTP_PORT"] = req.getHeader("3004");
-	this->_env["HTTP_USER_AGENT"] = req.getHeader("User-Agent");
+	this->_env["HTTP_HOST"] = req.getHeader("host").substr(0, req.getHeader("host").find(":"));
+	this->_env["HTTP_PORT"] = req.getHeader("host").substr(req.getHeader("host").find(":") + 1);
+	this->_env["HTTP_USER_AGENT"] = req.getHeader("user-agent");
 	this->_env["REDIRECT_STATUS"] = "200";
 	this->_env["REQUEST_METHOD"] = req.getMethodStr();
-	this->_env["REMOTE_ADDR"] = req.getHeader("Host");
+	this->_env["REMOTE_ADDR"] = req.getHeader("host").substr(0, req.getHeader("host").find(":"));
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->_env["REQUEST_URI"] = req.getPath() + req.getQuery();
 	this->_env["SERVER_SOFTWARE"] = req.getServerName();
 	if (req.getMethodStr() == "POST")
 	{
-		this->_env["CONTENT_LENGTH"] = req.getHeader("Content-Length");
-		this->_env["CONTENT_TYPE"] = req.getHeader("Content-Type");
+		this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
+		this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
 	}
 	this->_ch_env = (char **)calloc(sizeof(char *), this->_env.size() + 1);
 	std::map<std::string, std::string>::const_iterator it = this->_env.begin();

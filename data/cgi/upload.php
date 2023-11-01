@@ -14,6 +14,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $fileType = $file["type"];
         $fileSize = $file["size"];
         $fileError = $file["error"];
+		// Priniting the file details in stderror
+		fwrite(STDERR, "File Name: " . $fileName . "\n");
 
         $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
 

@@ -153,7 +153,8 @@ void Multiplexer::acceptNewConnection(Server &serv)
 	if ((client_sock = accept(serv.getFd(), (struct sockaddr *)&client_address,
 							  (socklen_t *)&client_address_size)) == -1)
 	{
-		std::cerr << "Accept failed: Unable to accept the client connection." << std::endl; return ;
+		std::cerr << "Accept failed: Unable to accept the client connection." << std::endl;
+		return;
 	}
 	std::cout << YELLOW_BOLD << "Assigned Socket " << client_sock << " to connection from " << inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN) << RESET << std::endl;
 	addToSet(client_sock, _recv_fds);
@@ -182,7 +183,7 @@ void Multiplexer::runServers()
 		if (select(fdmax + 1, &_recv_temp, &_write_temp, NULL, NULL) < 0)
 		{
 			std::cerr << "Select failed: Unable to monitor file descriptor." << std::endl;
-			continue ;
+			continue;
 		}
 		for (int i = 2; i <= fdmax; i++)
 		{

@@ -34,9 +34,6 @@ std::string Response::get_headers() { return (_headers); }
 bool Response::isResourceFound(const std::string &fullPath)
 {
 	struct stat fileStat;
-	// DEBUGGING STARTS
-	std::cout << "PRINTING FULL PATH: " << fullPath << std::endl;
-	// DEBUGGING ENDS
 	if (stat(fullPath.c_str(), &fileStat) == 0)
 	{
 		if (S_ISREG(fileStat.st_mode))
@@ -80,7 +77,7 @@ std::string Response::generateResponse(std::string fullPath, int flag, Location 
 	contentType = getContentTypeFromExtension(fullPath);
 	file.close();
 	setStatus(statusCode, statusTextGen(statusCode));
-	setHeader("Server", "MyWebServer");
+	setHeader("Server", _server_conf.getServerName());
 	setHeader("Content-Type", contentType);
 	setHeader("Content-length", to_string(fileSize));
 	return this->toString();
@@ -396,53 +393,30 @@ int Response::postController(Location location)
 		body = parseBoundary(body, _req.getBoundary());
 		file << body;
 		set_headers(generateErrorResponse(SUCCESS, _server_conf));
-		return 0;
 	}
 	else
 	{
 		file << _req.getBody();
 		set_headers(generateErrorResponse(SUCCESS, _server_conf));
-		return 0;
 	}
+	return (0);
 }
 
-int Response::deleteController(Location location)
+int Response::deleteController()
 {
-	(void)location;
 	if (gettype() == "FILE")
 	{
 		std::string resourcePath = getPath();
 		if (deleteResource(resourcePath))
-		{
-			// Resource deleted successfully
-			std::string res = "HTTP/1.1 200 OK\r\n";
-			res += "Server: AstroServer\r\n";
-			res += "Content-Length: 0\r\n";
-			res += "Content-Type: application/json\r\n";
-			res += "\r\n";
-			set_headers(res);
-			return 0;
-		}
+			set_headers(generateErrorResponse(SUCCESS, _server_conf));
 		else
-		{
 			set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
-			return 0;
-		}
 	}
 	else if (gettype() == "FOLDER")
-	{
 		set_headers(generateErrorResponse(FORBIDDEN, _server_conf));
-		return (0);
-	}
 	else
-	{
-		std::string res = "HTTP/1.1 404 Not Found\r\n";
-		res += "Content-Length: 0\r\n";
-		res += "Content-Type: application/json\r\n";
-		res += "\r\n";
-		set_headers(res);
-		return (0);
-	}
+		set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
+	return (0);
 }
 
 int Response::checkRedirection(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path)
@@ -458,9 +432,7 @@ int Response::checkRedirection(std::vector<Location> loc, std::vector<std::strin
 		{
 			if (!flag)
 				break;
-			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
-			if (sub_uri == "")
-				sub_uri = "/";
+			std::string sub_uri = sub_uris[i];
 			if (itx->getPath() == sub_uri)
 			{
 				flag = false;
@@ -472,15 +444,17 @@ int Response::checkRedirection(std::vector<Location> loc, std::vector<std::strin
 					{
 						if (ity->getPath() == itx->getReturn())
 						{
+							std::string _req_path = _req.getPath();
+							_path = _req_path.replace(0, sub_uri.length(), itx->getReturn());
 							statusCode = 302;
 							loc_path = ity->getPath();
 							_req.setPath(loc_path);
 							redir = true;
 							std::string res = "HTTP/1.1 " + to_string(statusCode) + " Found\r\n";
 							res += "Server: " + _server_conf.getServerName() + "\r\n";
-							res += "Location: " + ity->getPath() + "\r\n";
+							res += "Location: " + _path + "\r\n";
 							res += "Content-Length: 0\r\n";
-							res += "Content-Type: application/json\r\n";
+							// res += "Content-Type: application/json\r\n";
 							res += "\r\n";
 							set_headers(res);
 							return (1);
@@ -515,9 +489,7 @@ int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uri
 		{
 			if (!flag)
 				break;
-			std::string sub_uri = sub_uris[i].substr(0, sub_uris[i].length() - 1);
-			if (sub_uri[sub_uri.length() - 1] != '/')
-				sub_uri += "/";
+			std::string sub_uri = sub_uris[i];
 			if (it->getPath() == sub_uri)
 			{
 				std::string root = it->getRootLocation() != "" ? it->getRootLocation() : _server_conf.getRoot();
@@ -534,7 +506,7 @@ int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uri
 				if (_req.getMethodStr() == "GET")
 					return (!getController(*it));
 				else if (_req.getMethodStr() == "DELETE")
-					return (!deleteController(*it));
+					return (!deleteController());
 				else if (_req.getMethodStr() == "POST")
 					return (!postController(*it));
 				else
@@ -562,7 +534,6 @@ int Response::respond()
 	std::reverse(sub_uris.begin(), sub_uris.end());
 	if (checkRedirection(loc, sub_uris, loc_path))
 		return (0);
-
 	sub_uris = generateSubUris(loc_path);
 	std::reverse(sub_uris.begin(), sub_uris.end());
 
@@ -709,7 +680,7 @@ std::string Response::generateErrorResponse(error_pages code, Server server)
 {
 
 	std::map<error_pages, std::string> err_pages = server.getErrorPages();
-	if (err_pages[code] != "")
+	if (err_pages[code] != "" && _req.getMethodStr() == "GET")
 	{
 		std::string path_to_error_page = server.getRoot() + "/" + err_pages[code];
 		std::ifstream file(path_to_error_page.c_str(), std::ios::binary);
@@ -728,45 +699,46 @@ std::string Response::generateErrorResponse(error_pages code, Server server)
 		return res;
 	}
 	// TODO: CHANGE FLAG
-	bool flag = true;
 	std::string code_string = to_string(code);
 	std::string res = "HTTP/1.1 " + code_string + " " + statusTextGen(code) + "\r\n";
-	res += "Server: AstroServer\r\n";
-	std::string body = "<!DOCTYPE html>\r\n";
-	body += "<html lang='en'>\r\n";
-	body += "<head>\r\n";
-	body += "<meta charset='UTF-8'>\r\n";
-	body += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>\r\n";
-	body += "<title>" + code_string + " - " + statusTextGen(code) + "</title>\r\n";
-	body += "<style>\r\n";
-	body += "*{margin:0;padding:0;box-sizing:border-box;}\r\n";
-	body += "body {\r\n";
-	body += "width: 100%;\r\n";
-	body += "height: 100vh;\r\n";
-	body += "display: flex;\r\n";
-	body += "align-items: center;\r\n";
-	body += "justify-content: center;\r\n";
-	body += "background-color: #2e2e2e;\r\n";
-	body += "color: #fff;\r\n";
-	body += "}\r\n";
-	body += "h1 {\r\n";
-	body += "font-family: 'Courier New', Courier, monospace;\r\n";
-	body += "}\r\n";
-	body += "</style>\r\n";
-	body += "</head>\r\n";
-	body += "<body>\r\n";
-	body += "<h1>" + code_string + " - " + statusTextGen(code) + "</h1>\r\n";
-	body += "</body>\r\n";
-	body += "</html>\r\n";
-
-	if (flag)
+	res += "Server: " + _server_conf.getServerName() + "\r\n";
+	std::string body = "";
+	if (_req.getMethodStr() == "GET")
 	{
 		res += "Content-Type: text/html\r\n";
-		res += "Content-Length: " + to_string(body.length()) + "\r\n\r\n";
-		res += body;
+		body += "<!DOCTYPE html>\r\n";
+		body += "<html lang='en'>\r\n";
+		body += "<head>\r\n";
+		body += "<meta charset='UTF-8'>\r\n";
+		body += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>\r\n";
+		body += "<title>" + code_string + " - " + statusTextGen(code) + "</title>\r\n";
+		body += "<style>\r\n";
+		body += "*{margin:0;padding:0;box-sizing:border-box;}\r\n";
+		body += "body {\r\n";
+		body += "width: 100%;\r\n";
+		body += "height: 100vh;\r\n";
+		body += "display: flex;\r\n";
+		body += "align-items: center;\r\n";
+		body += "justify-content: center;\r\n";
+		body += "background-color: #2e2e2e;\r\n";
+		body += "color: #fff;\r\n";
+		body += "}\r\n";
+		body += "h1 {\r\n";
+		body += "font-family: 'Courier New', Courier, monospace;\r\n";
+		body += "}\r\n";
+		body += "</style>\r\n";
+		body += "</head>\r\n";
+		body += "<body>\r\n";
+		body += "<h1>" + code_string + " - " + statusTextGen(code) + "</h1>\r\n";
+		body += "</body>\r\n";
+		body += "</html>\r\n";
 	}
 	else
-		res += "\r\n";
+	{
+		res += "Content-Type: application/json\r\n";
+	}
+	res += "Content-Length: " + to_string(body.length()) + "\r\n\r\n";
+	res += body;
 	return res;
 }
 

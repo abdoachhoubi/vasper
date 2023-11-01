@@ -52,15 +52,12 @@ std::vector<std::string> splitParametrs(std::string line, std::string sep)
 // TAG: Generates all the sub-uris of a given uri
 std::vector<std::string> generateSubUris(const std::string &input)
 {
-	std::vector<std::string> substrings;
-	std::istringstream ss(input);
-	std::string token, current = "";
+	std::vector<std::string> tokens;
+	std::string token;
+	std::stringstream ss(input);
 	while (std::getline(ss, token, '/'))
-	{
-		current += token + "/";
-		substrings.push_back(current);
-	}
-	return substrings;
+		tokens.push_back("/" + token);
+	return tokens;
 }
 
 // TAG: Checks if a path is a directory

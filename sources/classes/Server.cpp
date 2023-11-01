@@ -165,9 +165,10 @@ void Server::setAutoindex(std::string autoindex)
 // TAG: Check if location is valid when it comes to CGI params
 int Server::isValidLocation(Location &location) const
 {
+
 	if (location.getCGI())
 	{
-		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
+		if (location.getCgiPath().empty() || location.getCgiExtension().empty())
 			return (0);
 		if (location.getCgiPath().size() != location.getCgiExtension().size())
 			return (0);
@@ -210,7 +211,7 @@ bool Server::checkLocations() const
 	std::vector<Location>::const_iterator ite = locations.end();
 	for (; it != ite; ++it)
 	{
-		if (isValidLocation(const_cast<Location &>(*it)) == 0)
+		if (!isValidLocation(const_cast<Location &>(*it)))
 		{
 			std::cerr << "Error: invalid location ---> " << it->getPath() << std::endl;
 			return false;
@@ -282,7 +283,8 @@ void Server::createServer(void)
 	int option_value = 1;
 	if ((listenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		std::cerr << "Listen failed: Unable to listen on the socket." << " Closing ...." << std::endl;
+		std::cerr << "Listen failed: Unable to listen on the socket."
+				  << " Closing ...." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int)) < 0)
@@ -296,7 +298,8 @@ void Server::createServer(void)
 	serveraddress.sin_port = htons(_port);
 	if (bind(listenFd, (struct sockaddr *)&serveraddress, sizeof(serveraddress)) == -1)
 	{
-		std::cerr << "Bind failed: Unable to bind the socket." << " Closing ...." << std::endl;
+		std::cerr << "Bind failed: Unable to bind the socket."
+				  << " Closing ...." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (listen(listenFd, SOMAXCONN) == -1)
