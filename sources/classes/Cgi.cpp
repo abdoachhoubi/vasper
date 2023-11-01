@@ -132,14 +132,7 @@ void Cgi::initEnv(Request &req, Location &location)
 	std::string ext_path;
 
 	extension = this->_cgi_path.substr(this->_cgi_path.find("."));
-	// std::map<std::string, std::string>::iterator it_path = location._ext_path.find(extension);
-	// if (it_path == location._ext_path.end())
-	// 	return;
 	ext_path = location._ext_path[extension];
-
-	// DEBUGGING STARTS
-	std::cout << "EXT PATH ===> " << ext_path << std::endl;
-	// DEBUGGING ENDS
 
 	this->_env["AUTH_TYPE"] = "Basic";
 	this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");

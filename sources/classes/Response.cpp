@@ -58,14 +58,12 @@ std::string Response::generateResponse(std::string fullPath, int flag, Location 
 	}
 	if (!fileExists(fullPath))
 	{
-		std::cout << "file not exist " << std::endl;
-		set_headers(generateErrorResponse(FORBIDDEN, _server_conf));
+		set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
 		return _headers;
 	}
 	std::ifstream file(fullPath.c_str(), std::ios::binary | std::ios::ate);
 	if (!file)
 	{
-		std::cout << "error in opening the file " << std::endl;
 		set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
 		return _headers;
 	}
@@ -282,7 +280,6 @@ int Response::getController(Location location)
 			{
 				_cgi_state = 1;
 				handleCgi(location);
-				// std::cout << "status code: " << statusCode << std::endl;
 				std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 				res += "Content-Type: text/html\r\n";
 				res += "Content-Length: " + to_string(_response.length()) + "\r\n";
@@ -299,9 +296,21 @@ int Response::getController(Location location)
 	}
 	else if (gettype() == "FOLDER")
 	{
+		bool index_exist = false;
+		if (location.getIndexLocation() != "" || _server_conf.getIndex() != "")
+		{
+			std::string index = location.getIndexLocation() != "" ? location.getIndexLocation() : _server_conf.getIndex();
+			std::string index_path;
+			if (getPath()[(int)(getPath().size() - 1)] != '/')
+				index_path = getPath() + "/" + index;
+			else
+				index_path = getPath() + index;
+			if (fileExists(index_path))
+				index_exist = true;
+		}
 		if (getPath()[(int)(getPath().size() - 1)] != '/')
 			setPath(getPath() + "/");
-		if (!Server::isReadableAndExist(getPath(), location.getIndexLocation()) && (location.getIndexLocation() != "" || _server_conf.getIndex() != ""))
+		if (!Server::isReadableAndExist(getPath(), location.getIndexLocation()) && index_exist)
 		{
 			set_headers(generateResponse(getPath(), 1, location));
 			return 0;
@@ -437,26 +446,11 @@ int Response::deleteController(Location location)
 	}
 }
 
-int Response::respond()
+int Response::redirect(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path)
 {
-	_req.setPath(decodePath(_req.getPath()));
-	std::string _req_path = _req.getPath();
-	std::string loc_path = _req.getPath();
-	if (loc_path[loc_path.length() - 1] == '/')
-		loc_path = loc_path.substr(0, loc_path.length() - 1);
-	loc_path = loc_path == "" ? "/" : loc_path;
-
-	_check = true;
-
-	std::string p = _req.getPath().substr(0, _req.getPath().find("/", 1));
-
-	std::vector<Location> loc = _server_conf.getLocations();
-
-	// ! REDIRECTIONS
 	std::vector<Location>::iterator itx;
-	std::vector<std::string> sub_uris = generateSubUris(loc_path);
-	std::reverse(sub_uris.begin(), sub_uris.end());
 	bool flag = true;
+
 	for (size_t i = 0; i < sub_uris.size(); ++i)
 	{
 		if (!flag)
@@ -490,7 +484,7 @@ int Response::respond()
 							res += "Content-Type: application/json\r\n";
 							res += "\r\n";
 							set_headers(res);
-							return (0);
+							return (1);
 						}
 					}
 				}
@@ -499,20 +493,20 @@ int Response::respond()
 				if (!redir)
 				{
 					set_headers(generateErrorResponse(MOVED_PERMANENTLY, _server_conf));
-					return (0);
+					return (1);
 				}
 			}
 		}
 	}
+	return (0);
+}
 
-	sub_uris = generateSubUris(loc_path);
-	std::reverse(sub_uris.begin(), sub_uris.end());
-
+int Response::matchLocation(std::vector<Location> loc, std::vector<std::string> sub_uris)
+{
+	bool flag = true;
+	std::string _req_path = _req.getPath();
 	std::vector<Location>::iterator it;
-	flag = true;
-	std::vector<std::string> methods;
 
-	// ! LOCATION MATCHING
 	for (size_t i = 0; i < sub_uris.size(); ++i)
 	{
 		if (!flag)
@@ -529,7 +523,11 @@ int Response::respond()
 			if (it->getPath() == sub_uri)
 			{
 				if (it->getRootLocation() != "")
-					_req_path = _req_path.replace(0, sub_uri.length() - 1, it->getRootLocation());
+				{
+					// replace the req path matched location with the location's root path
+					// example: if _req_path is "/in/lol.html" and the location that was matched is "/in" then "/in" should be replaced with it->getRootPath()
+					_req_path = _req_path.replace(0, sub_uri.length(), it->getRootLocation());
+				}
 				else
 					_req_path = _req_path.replace(0, sub_uri.length() - 1, _server_conf.getRoot());
 				flag = false;
@@ -538,22 +536,44 @@ int Response::respond()
 				if (!isMethodAllowed(it->getAllowedMethods(), _req.getMethodStr()))
 				{
 					set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
-					return (0);
+					return (1);
 				}
 				if (_req.getMethodStr() == "GET")
-					return (getController(*it));
+					return (!getController(*it));
 				else if (_req.getMethodStr() == "DELETE")
-					return (deleteController(*it));
+					return (!deleteController(*it));
 				else if (_req.getMethodStr() == "POST")
-					return (postController(*it));
+					return (!postController(*it));
 				else
 				{
 					set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
-					return (0);
+					return (1);
 				}
 			}
 		}
 	}
+	return (0);
+}
+
+int Response::respond()
+{
+	_req.setPath(decodePath(_req.getPath()));
+	std::string loc_path = _req.getPath();
+	if (loc_path[loc_path.length() - 1] == '/')
+		loc_path = loc_path.substr(0, loc_path.length() - 1);
+	loc_path = loc_path == "" ? "/" : loc_path;
+	_check = true;
+	std::vector<Location> loc = _server_conf.getLocations();
+	std::vector<std::string> sub_uris = generateSubUris(loc_path);
+	std::reverse(sub_uris.begin(), sub_uris.end());
+	if (redirect(loc, sub_uris, loc_path))
+		return (0);
+
+	sub_uris = generateSubUris(loc_path);
+	std::reverse(sub_uris.begin(), sub_uris.end());
+
+	if (matchLocation(loc, sub_uris))
+		return (0);
 	set_headers(generateErrorResponse(METHOD_NOT_ALLOWED, _server_conf));
 	return (0);
 }
@@ -570,7 +590,6 @@ std::string Response::generateUniqueFilename()
 bool Response::saveDataToFile(const std::string &filePath, const std::string &data)
 {
 	std::string final_path = _server_conf.getRoot() + "/" + _server_conf.getUploadPath() + filePath;
-	std::cout << final_path << std::endl;
 	std::ofstream file(final_path.c_str(), std::ios::binary);
 	if (!file.is_open())
 		return false;
@@ -729,10 +748,7 @@ std::string Response::generateErrorResponse(error_pages code, Server server)
 		std::string path_to_error_page = server.getRoot() + "/" + err_pages[code];
 		std::ifstream file(path_to_error_page.c_str(), std::ios::binary);
 		if (!file)
-		{
-			std::cout << "error in opening the file " << std::endl;
 			return (generateErrorResponse(INTERNAL_SERVER_ERROR, server));
-		}
 		std::string body;
 		std::string line;
 		while (getline(file, line))
