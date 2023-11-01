@@ -42,7 +42,6 @@ class Location
 		void setMaxBodySize(std::string parametr);
 		const unsigned long &getMaxBodySize() const;
 
-		std::string getPrintMethods() const;
 
 		void setAllowedMethods(std::vector<std::string> methods);
 		std::vector<std::string> getAllowedMethods() const;

@@ -126,18 +126,6 @@ void Location::setMaxBodySize(std::string parametr)
 	iss >> clientMaxBodySize;
 }
 
-std::string Location::getPrintMethods() const
-{
-	std::string result = "";
-	if (_methods[0])
-		result += "GET ";
-	if (_methods[1])
-		result += "POST ";
-	if (_methods[2])
-		result += "DELETE ";
-	return (result);
-}
-
 void Location::setCGI(std::string parametr)
 {
 	if (parametr == "on")

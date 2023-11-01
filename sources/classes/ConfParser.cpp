@@ -35,7 +35,6 @@ void ConfParser::parse(const std::string &config_file)
 		}
 
 	nbr_serv = servers.size();
-	std::cout << "nb serv: " << nbr_serv << " size " << servers.size() << std::endl;
 }
 
 void ConfParser::splitServers(std::string &content)
@@ -163,75 +162,12 @@ void ConfParser::createServer(std::string &config, Server &server)
 		}
 	}
 	if (Server::isReadableAndExist(server.getRoot(), server.getUploadPath()) < 0)
-		throw std::runtime_error("Error: upload file not exist 2");
+		throw std::runtime_error("Error: upload folder not exist 2");
 	if (!server.checkLocations())
 		throw std::runtime_error("Error: in Location from config file");
 	if (!server.isValidErrorPages())
 		throw std::runtime_error("Error: in ErrorPages from config file");
 }
-
-int ConfParser::print()
-{
-	std::cout << "nb server: " << nbr_serv << " size " << servers.size() << std::endl;
-
-	for (size_t i = 0; i < servers.size(); i++)
-	{
-		std::cout << "getRoot: " << servers[i].getRoot() << std::endl;
-		std::cout << "getPort: " << servers[i].getPort() << std::endl;
-		std::cout << "getHost: " << servers[i].getHost() << std::endl;
-		std::cout << "getServerName: " << servers[i].getServerName() << std::endl;
-		std::cout << "getClientMaxBodySize: " << servers[i].getClientMaxBodySize() << std::endl;
-		std::cout << "getIndex: " << servers[i].getIndex() << std::endl;
-		std::cout << "getAutoindex: " << servers[i].getAutoindex() << std::endl;
-		std::map<error_pages, std::string> errors = servers[i].getErrorPages();
-		std::map<error_pages, std::string>::iterator it = errors.begin();
-		std::map<error_pages, std::string>::iterator ite = errors.end();
-		for (; it != ite; ++it)
-		{
-			std::cout << "error code: " << it->first << "\nerror page: " << it->second << std::endl;
-		}
-		std::vector<Location> locations = servers[i].getLocations();
-		std::vector<Location>::iterator itl = locations.begin();
-		std::vector<Location>::iterator itle = locations.end();
-		for (; itl != itle; itl++)
-		{
-			std::cout << "location: " << itl->getPath() << std::endl;
-			std::cout << "location root: " << itl->getRootLocation() << std::endl;
-			std::cout << "location autoindex: " << itl->getAutoindex() << std::endl;
-			std::cout << "location index: " << itl->getIndexLocation() << std::endl;
-			std::cout << "location return: " << itl->getReturn() << std::endl;
-			std::cout << "location alias: " << itl->getAlias() << std::endl;
-			std::vector<std::string> getCgi = itl->getCgiPath();
-			std::vector<std::string>::iterator itc = getCgi.begin();
-			std::vector<std::string>::iterator itce = getCgi.end();
-			for (; itc != itce; itc++)
-			{
-				std::cout << "location cgi path: " << *itc << std::endl;
-			}
-			std::vector<std::string> getCgiExt = itl->getCgiExtension();
-			std::vector<std::string>::iterator itce2 = getCgiExt.begin();
-			std::vector<std::string>::iterator itce2e = getCgiExt.end();
-			for (; itce2 != itce2e; itce2++)
-			{
-				std::cout << "location cgi extension: " << *itce2 << std::endl;
-			}
-			// std::cout << "location cgi path: " << itl->getCgiPath()[0]<< std::endl;
-			// std::cout << "location cgi extension: " << itl->getCgiExtension()[0]<< std::endl;
-			std::cout << "location max body size: " << itl->getMaxBodySize() << std::endl;
-			std::vector<bool> getMethods = itl->getMethods();
-			std::vector<bool>::iterator itm = getMethods.begin();
-			std::vector<bool>::iterator itme = getMethods.end();
-			for (; itm != itme; itm++)
-			{
-				std::cout << "location methods: " << *itm << std::endl;
-			}
-			std::cout << "location methods: " << itl->getPrintMethods() << std::endl;
-			std::cout << "cgi: " << itl->getCGI() << std::endl;
-		}
-	}
-	return 0;
-}
-
 /* define is path is file(1), folder(2) or something else(3) */
 int ConfParser::getTypePath(std::string const path)
 {

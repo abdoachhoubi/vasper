@@ -356,7 +356,6 @@ int Response::postController(Location location)
 		{
 			_cgi_state = 1;
 			handleCgi(location);
-			// std::cout << "status code: " << statusCode << std::endl;
 			std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 			res += "Content-Type: text/html\r\n";
 			res += "Content-Length: " + to_string(_response.length()) + "\r\n";
@@ -484,7 +483,6 @@ int Response::respond()
 							loc_path = ity->getPath();
 							_req.setPath(loc_path);
 							redir = true;
-							// creating redirection response
 							std::string res = "HTTP/1.1 " + to_string(statusCode) + " Found\r\n";
 							res += "Server: " + _server_conf.getServerName() + "\r\n";
 							res += "Location: " + ity->getPath() + "\r\n";
@@ -560,7 +558,6 @@ int Response::respond()
 	return (0);
 }
 
-// Helper function to generate a unique filename
 std::string Response::generateUniqueFilename()
 {
 	std::srand(static_cast<unsigned int>(std::time(NULL)));

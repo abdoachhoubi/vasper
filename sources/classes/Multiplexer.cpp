@@ -74,12 +74,6 @@ void Multiplexer::readRequest(const int &i, Client &client)
 		if (client.request.parsingCompleted() || client.request.errorCode()) // 1 = parsing completed and we can work on the response.
 		{
 			client.buildResponse();
-			// if (client.response.getCgiState())
-			// {
-			// 	handleReqBody(client);
-			// 	addToSet(client.response._cgi_obj.pipe_in[1], _write_fds);
-			// 	addToSet(client.response._cgi_obj.pipe_out[0], _recv_fds);
-			// }
 			removeFromSet(i, _recv_fds);
 			addToSet(i, _write_fds);
 		}

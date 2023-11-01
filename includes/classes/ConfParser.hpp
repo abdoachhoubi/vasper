@@ -21,7 +21,6 @@ class ConfParser {
 		size_t					startServer(size_t start, std::string &content);
 		size_t					endServer(size_t start, std::string &content);
 		void					createServer(std::string &config, Server &server);
-		int						print();
 
 		static int getTypePath(std::string const path);
 		static int checkFile(std::string const path, int mode);
