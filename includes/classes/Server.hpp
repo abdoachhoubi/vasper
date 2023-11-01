@@ -69,7 +69,7 @@ public:
 	int isValidLocation(Location &location) const;
 	static void checkToken(std::string &parametr);
 	bool checkLocations() const;
-	bool isValidErrorPages();
+	// bool isValidErrorPages();
 	static int checkTypePath(std::string const path);
 	static int accessFile(std::string const path, int mode);
 	static std::string fileToString(std::string path);

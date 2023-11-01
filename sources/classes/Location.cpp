@@ -115,7 +115,6 @@ void Location::setCgiPath(std::vector<std::string> path)
 		struct stat buffer;
 		if (stat(path[i].c_str(), &buffer))
 			throw std::runtime_error("Error: invalid cgi_path");
-		i++;
 	}
 	cgi_path = path;
 }

@@ -67,6 +67,7 @@ void Server::setHost(std::string parametr)
 		throw std::runtime_error("Error: invalid host");
 	_host = inet_addr(parametr.c_str());
 }
+
 void Server::setErrorPages(std::vector<std::string> &parametr)
 {
 	if (parametr.size() % 2 != 0)
@@ -149,17 +150,17 @@ void Server::setAutoindex(std::string autoindex)
 }
 
 // TAG: Checks if all error pages are valid
-bool Server::isValidErrorPages()
-{
-	std::map<error_pages, std::string>::iterator it = _errorPages.begin();
-	std::map<error_pages, std::string>::iterator ite = _errorPages.end();
-	for (; it != ite; ++it)
-	{
-		if (Server::accessFile(it->second, F_OK) < 0 || Server::accessFile(it->second, R_OK) < 0)
-			return false;
-	}
-	return true;
-}
+// bool Server::isValidErrorPages()
+// {
+// 	std::map<error_pages, std::string>::iterator it = _errorPages.begin();
+// 	std::map<error_pages, std::string>::iterator ite = _errorPages.end();
+// 	for (; it != ite; ++it)
+// 	{
+// 		if (Server::accessFile(it->second, F_OK) < 0 || Server::accessFile(it->second, R_OK) < 0)
+// 			return false;
+// 	}
+// 	return true;
+// }
 
 // TAG: Check if location is valid when it comes to CGI params
 int Server::isValidLocation(Location &location) const
