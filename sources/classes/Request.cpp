@@ -47,15 +47,6 @@ bool    checkUriPos(std::string path)
     return (0);
 }
 
-/**
-
- * Checks if character is allowed to be in a URI
- * Characters allowed as specifed in RFC:
-   Alphanumeric: A-Z a-z 0-9
-   Unreserved: - _ . ~
-   Reserved:  * ' ( ) ; : @ & = + $ , / ? % # [ ]
- **/
-
 bool    allowedCharURI(uint8_t ch)
 {
     if ((ch >= '#' && ch <= ';') || (ch >= '?' && ch <= '[') || (ch >= 'a' && ch <= 'z') ||
@@ -64,16 +55,6 @@ bool    allowedCharURI(uint8_t ch)
     return (false);
 }
 
-/**
-
-* Checks whether the character passed is allowed in a field name
-* Characters allowed as specifed in RFC:
-
-"!" / "#" / "$" / "%" / "&" / "'"
-/ "*" / "+" / "-" / "." / "^" / "_"
-/ "`" / "|" / "~" / 0-9 / A-Z / a-z
-
-**/
 bool    isToken(uint8_t ch)
 {
     if (ch == '!' || (ch >= '#' && ch <= '\'') || ch == '*'|| ch == '+' || ch == '-'  || ch == '.' ||
@@ -401,14 +382,10 @@ void    Request::parse(char *data, size_t size)
                         if (_chunked_flag == true)
                             _state = Chunked_Length_Begin;
                         else
-                        {
                             _state = Message_Body;
-                        }
                     }
                     else
-                    {
                         _state = Parsing_Done;
-                    }
                     continue ;
                 }
                 else
@@ -602,73 +579,54 @@ void    Request::parse(char *data, size_t size)
                 break ;
             }
             case Parsing_Done:
-            {
                 return ;
-            }
         }
 		//	SWITCH END
         _storage += character;
     }
     if( _state == Parsing_Done)
-    {
         _body_str.append((char*)_body.data(), _body.size());
-    }
 }
 
-bool    Request::parsingCompleted()
-{
-    return (_state == Parsing_Done);
-}
+REQ_METHOD  &Request::getMethod() {return (_method);}
 
-short  Request::getErrorCode()
-{
-	return (_error_code);
-}
+std::string &Request::getPath() {return (_path);}
 
-REQ_METHOD  &Request::getMethod()
-{
-    return (_method);
-}
+std::string &Request::getQuery() {return (_query);}
 
-std::string &Request::getPath()
-{
-    return (_path);
-}
+std::string &Request::getFragment() {return (_fragment);}
 
-std::string &Request::getQuery()
-{
-    return (_query);
-}
+std::string Request::getMethodStr() {return (_method_str[_method]);}
 
-std::string &Request::getFragment()
-{
-    return (_fragment);
-}
+std::string Request::getHeader(std::string header) {return (_request_headers[header]);}
 
-std::string Request::getHeader(std::string header)
-{
-    return (_request_headers[header]);
-}
+std::string &Request::getBody() {return (_body_str);}
 
-const std::map<std::string, std::string> &Request::getHeaders() const
-{
-	return (this->_request_headers);
-}
+std::string &Request::getBoundary() {return (this->_boundary);}
 
-std::string Request::getMethodStr()
-{
-	return (_method_str[_method]);
-}
+std::string Request::getVersion() {return (to_string(_ver_major) + "." + to_string(_ver_minor));}
 
-std::string &Request::getBody()
-{
-    return (_body_str);
-}
+std::string Request::getServerName() {return (this->_server_name);}
 
-std::string Request::getVersion()
-{
-	return (to_string(_ver_major) + "." + to_string(_ver_minor));
-}
+std::vector<u_int8_t> &Request::getBodyVector() {return (_body);}
+
+const std::map<std::string, std::string> &Request::getHeaders() const {return (this->_request_headers);}
+
+void  Request::cutReqBody(int bytes) {_body_str = _body_str.substr(bytes);}
+
+bool  Request::getMultiformFlag() {return (this->_multiform_flag);}
+
+void  Request::setMethod(REQ_METHOD & method) {_method = method;}
+
+void  Request::setMaxBodySize(size_t size) {_max_body_size = size;}
+
+void  Request::setPath(std::string path) {_path = path;}
+
+short Request::errorCode() {return (this->_error_code);}
+
+bool  Request::parsingCompleted() {return (_state == Parsing_Done);}
+
+short Request::getErrorCode() {return (_error_code);}
 
 std::string Request::getUri()
 {
@@ -680,21 +638,6 @@ std::string Request::getUri()
 	return (uri);
 }
 
-std::string     Request::getServerName()
-{
-    return (this->_server_name);
-}
-
-bool    Request::getMultiformFlag()
-{
-    return (this->_multiform_flag);
-}
-
-std::string     &Request::getBoundary()
-{
-    return (this->_boundary);
-}
-
 void    Request::setBody(std::string body)
 {
     _body.clear();
@@ -702,31 +645,11 @@ void    Request::setBody(std::string body)
     _body_str = body;
 }
 
-std::vector<u_int8_t> &Request::getBodyVector()
-{
-	return (_body);
-}
-
-void    Request::setMethod(REQ_METHOD & method)
-{
-    _method = method;
-}
-
 void    Request::setHeader(std::string &name, std::string &value)
 {
     trimStr(value);
     toLower(name);
     _request_headers[name] = value;
-}
-
-void    Request::setMaxBodySize(size_t size)
-{
-    _max_body_size = size;
-}
-
-void	Request::setPath(std::string path)
-{
-	_path = path;
 }
 
 void        Request::printParserReq()
@@ -748,7 +671,6 @@ void        Request::printParserReq()
 		std::cout << *it;
 	std::cout << std::endl << BLUE_BOLD "END OF REQUEST\t" << GREEN_BOLD"--------------------------------------------" RESET << std::endl;
 }
-
 
 void        Request::_handle_headers()
 {
@@ -780,11 +702,6 @@ void        Request::_handle_headers()
     }
 }
 
-short     Request::errorCode()
-{
-    return (this->_error_code);
-}
-
 /* Reset object variables to recive new request */
 
 void    Request::clear()
@@ -812,7 +729,6 @@ void    Request::clear()
     _chunked_flag = false;
     _multiform_flag = false;
 }
-
 /* Checks the value of header "Connection". If keep-alive, don't close the connection. */
 
 bool        Request::keepAlive()
@@ -825,7 +741,3 @@ bool        Request::keepAlive()
     return (true);
 }
 
-void            Request::cutReqBody(int bytes)
-{
-    _body_str = _body_str.substr(bytes);
-}

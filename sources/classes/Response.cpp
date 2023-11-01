@@ -438,9 +438,6 @@ int Response::deleteController(Location location)
 	}
 }
 
-// std::string generate() {}
-
-// Response main method (tkhari9a)
 int Response::respond()
 {
 	_req.setPath(decodePath(_req.getPath()));

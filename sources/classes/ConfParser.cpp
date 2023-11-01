@@ -1,8 +1,9 @@
 #include "../../includes/main.hpp"
 
 ConfParser::ConfParser() : nbr_serv(0) {}
-
 ConfParser::~ConfParser() {}
+std::vector<Server> ConfParser::getServers() {return servers;}
+int ConfParser::checkFile(std::string const path, int mode) {return (access(path.c_str(), mode));}
 
 void ConfParser::parse(const std::string &config_file)
 {
@@ -122,9 +123,7 @@ void ConfParser::createServer(std::string &config, Server &server)
 				server.setServerName(value[0]);
 			}
 			else if (key == "error_page")
-			{
 				server.setErrorPages(value);
-			}
 			else if (key == "location")
 			{
 				if (value.size() != 2)
@@ -143,29 +142,17 @@ void ConfParser::createServer(std::string &config, Server &server)
 				server.setLocation(name, location);
 			}
 			else if (key == "host")
-			{
 				server.setHost(value[0]);
-			}
 			else if (key == "client_max_body_size")
-			{
 				server.setClientMaxBodySize(value[0]);
-			}
 			else if (key == "root")
-			{
 				server.setRoot(value[0]);
-			}
 			else if (key == "index")
-			{
 				server.setIndex(value[0]);
-			}
 			else if (key == "autoindex")
-			{
 				server.setAutoindex(value[0]);
-			}
 			else if (key == "upload_path")
-			{
 				server.setUploadPath(value[0]);
-			}
 		}
 		else
 		{
@@ -181,11 +168,6 @@ void ConfParser::createServer(std::string &config, Server &server)
 		throw std::runtime_error("Error: in Location from config file");
 	if (!server.isValidErrorPages())
 		throw std::runtime_error("Error: in ErrorPages from config file");
-}
-
-std::vector<Server> ConfParser::getServers()
-{
-	return servers;
 }
 
 int ConfParser::print()
@@ -268,10 +250,4 @@ int ConfParser::getTypePath(std::string const path)
 	}
 	else
 		return (-1);
-}
-
-/* checks is the file exists and accessable */
-int ConfParser::checkFile(std::string const path, int mode)
-{
-	return (access(path.c_str(), mode));
 }
