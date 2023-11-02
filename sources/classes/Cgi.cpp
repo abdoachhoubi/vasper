@@ -73,6 +73,10 @@ const std::string &Cgi::getCgiPath() const { return (this->_cgi_path); }
 /* initialization environment variable */
 void Cgi::initEnv(Request &req, Location &location)
 {
+	this->req = req;
+	// DEBUGGING STARTS
+	std::cout << "INITIALIZING ENV" << std::endl;
+	// DEBUGGING ENDS
 	std::string extension;
 	std::string ext_path;
 
@@ -96,6 +100,9 @@ void Cgi::initEnv(Request &req, Location &location)
 	if (req.getMethodStr() == "POST")
 	{
 		this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
+		// DEBUGGING STARTS
+		std::cout << "CONTENT_LENGTH: " << this->_env["CONTENT_LENGTH"] << std::endl;
+		// DEBUGGING ENDS
 		this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
 	}
 	this->_ch_env = (char **)calloc(sizeof(char *), this->_env.size() + 1);
@@ -112,6 +119,7 @@ void Cgi::initEnv(Request &req, Location &location)
 }
 
 /* Pipe and execute CGI */
+/* Pipe and execute CGI */
 void Cgi::execute(short &error_code)
 {
 	if (this->_argv[0] == NULL || this->_argv[1] == NULL)
@@ -119,24 +127,62 @@ void Cgi::execute(short &error_code)
 		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
-	filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
-	if (filex < 0)
+
+	// Use pipes to redirect stdin and stdout
+	int stdin_pipe[2];
+	int stdout_pipe[2];
+
+	if (pipe(stdin_pipe) == -1 || pipe(stdout_pipe) == -1)
 	{
 		std::cerr << RED_BOLD << "pipe() failed" << RESET << std::endl;
-		close(filex);
 		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
+
 	this->_cgi_pid = fork();
+
 	if (this->_cgi_pid == 0)
 	{
-		dup2(filex, STDOUT_FILENO);
-		close(filex);
+		// Close the write end of the stdin pipe and the read end of the stdout pipe
+		close(stdin_pipe[1]);
+		close(stdout_pipe[0]);
+
+		// Redirect stdin and stdout to the pipes
+		dup2(stdin_pipe[0], STDIN_FILENO);
+		dup2(stdout_pipe[1], STDOUT_FILENO);
+
+		// Execute the CGI script
 		this->_exit_status = execve(this->_argv[0], this->_argv, this->_ch_env);
+
+		std::cerr << "EXECVE FAILED" << std::endl;
 		exit(this->_exit_status);
 	}
 	else if (this->_cgi_pid > 0)
+	{
+		// Close the read end of the stdin pipe and the write end of the stdout pipe
+		close(stdin_pipe[0]);
+		close(stdout_pipe[1]);
+
+		// Write the request body to the stdin of the CGI script
+		write(stdin_pipe[1], req.getBody().c_str(), req.getBody().length());
+		close(stdin_pipe[1]);
+
+		// Read the output from the stdout of the CGI script
+		char buffer[BUFSIZ];
+		ssize_t read_len;
+
+		filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
+		while ((read_len = read(stdout_pipe[0], buffer, BUFSIZ)) > 0)
+		{
+			write(filex, buffer, read_len); // Write to the file or stdout as needed
+		}
+
+		close(stdout_pipe[0]);
+
+		// Wait for the CGI script to complete
 		waitpid(this->_cgi_pid, &this->_exit_status, 0);
+		error_code = 200;
+	}
 	else
 	{
 		std::cout << "Fork failed" << std::endl;
