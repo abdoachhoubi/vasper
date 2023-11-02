@@ -114,7 +114,7 @@ void Cgi::initEnv(Request &req, Location &location)
 
 void Cgi::execute(short &error_code)
 {
-	if (_argv[0] == NULL || _argv[1] == NULL)
+	if (this->_argv[0] == NULL || this->_argv[1] == NULL)
 	{
 		error_code = INTERNAL_SERVER_ERROR;
 		return;
@@ -130,42 +130,48 @@ void Cgi::execute(short &error_code)
 		return;
 	}
 
-	_cgi_pid = fork();
+	this->_cgi_pid = fork();
 
-	if (_cgi_pid == 0)
+	if (this->_cgi_pid == 0)
 	{
-		// Child process
+		// Close the write end of the stdin pipe and the read end of the stdout pipe
 		close(stdin_pipe[1]);
 		close(stdout_pipe[0]);
 
+		// Redirect stdin and stdout to the pipes
 		dup2(stdin_pipe[0], STDIN_FILENO);
 		dup2(stdout_pipe[1], STDOUT_FILENO);
 
-		_exit_status = execve(_argv[0], _argv, _ch_env);
+		// Execute the CGI script
+		this->_exit_status = execve(this->_argv[0], this->_argv, this->_ch_env);
 
 		std::cerr << "EXECVE FAILED" << std::endl;
-		exit(_exit_status);
+		exit(this->_exit_status);
 	}
-	else if (_cgi_pid > 0)
+	else if (this->_cgi_pid > 0)
 	{
-		// Parent process
+		// Close the read end of the stdin pipe and the write end of the stdout pipe
 		close(stdin_pipe[0]);
 		close(stdout_pipe[1]);
 
+		// Write the request body to the stdin of the CGI script
 		write(stdin_pipe[1], req.getBody().c_str(), req.getBody().length());
 		close(stdin_pipe[1]);
 
 		// Read the output from the stdout of the CGI script
 		char buffer[BUFSIZ];
 		ssize_t read_len;
+
 		filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
 		while ((read_len = read(stdout_pipe[0], buffer, BUFSIZ)) > 0)
 		{
-			write(filex, buffer, read_len);
+			write(filex, buffer, read_len); // Write to the file or stdout as needed
 		}
+
 		close(stdout_pipe[0]);
 
-		waitpid(_cgi_pid, &_exit_status, 0);
+		// Wait for the CGI script to complete
+		waitpid(this->_cgi_pid, &this->_exit_status, 0);
 		error_code = 200;
 	}
 	else
@@ -186,6 +192,7 @@ int Cgi::findStart(const std::string path, const std::string delim)
 		return (-1);
 }
 
+/* Translation of parameters for QUERY_STRING environment variable */
 std::string Cgi::decode(std::string &path)
 {
 	size_t token = path.find("%");
@@ -220,11 +227,14 @@ std::string Cgi::getResponse()
 	{
 		std::string line;
 		while (getline(file, line, '\0'))
+		{
+			std::cout << RED_BOLD << "LINE: " << RESET << line << std::endl;
 			response += line;
+		}
 		file.close();
 	}
 	else if (!file.good())
-		std::cerr << "Unable to open CGI file" << std::endl;
+		std::cout << "Unable to open CGI file" << std::endl;
 	response += "\0";
 	return (response);
 }

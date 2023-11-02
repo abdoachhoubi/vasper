@@ -377,12 +377,20 @@ void Request::parse(char *data, size_t size)
 				_fields_done_flag = true;
 				_handle_headers();
 				// if no body then parsing is completed.
+				// if (getHeader("content-length").empty() && !_chunked_flag)
+				// {
+				// 	_error_code = BAD_REQUEST;
+				// 	_state = Parsing_Done;
+				// 	return;
+				// }
 				if (_body_flag == 1)
 				{
 					if (_chunked_flag == true)
 						_state = Chunked_Length_Begin;
 					else
+					{
 						_state = Message_Body;
+					}
 				}
 				else
 					_state = Parsing_Done;

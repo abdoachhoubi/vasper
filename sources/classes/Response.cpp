@@ -362,7 +362,6 @@ int Response::postController(Location location)
 		{
 			_cgi_state = 1;
 			handleCgi(location);
-			// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
 			std::string res = "";
 			res += _response;
 			set_headers(res);
@@ -533,6 +532,11 @@ int Response::router(std::vector<Location> loc, std::vector<std::string> sub_uri
 
 int Response::respond()
 {
+	if (_req.getErrorCode() != 0)
+	{
+		set_headers(generateErrorResponse((error_pages)_req.getErrorCode(), _server_conf));
+		return (0);
+	}
 	_req.setPath(decodePath(_req.getPath()));
 	std::string loc_path = _req.getPath();
 	if (loc_path[loc_path.length() - 1] == '/')
