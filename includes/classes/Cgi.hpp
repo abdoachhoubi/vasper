@@ -35,7 +35,6 @@ public:
 	const pid_t &getCgiPid() const;
 	const std::string &getCgiPath() const;
 
-	std::string getPathInfo(std::string &path, std::vector<std::string> extensions);
 	int findStart(const std::string path, const std::string delim);
 	std::string decode(std::string &path);
 

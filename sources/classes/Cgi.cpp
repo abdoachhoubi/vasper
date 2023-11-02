@@ -74,9 +74,6 @@ const std::string &Cgi::getCgiPath() const { return (this->_cgi_path); }
 void Cgi::initEnv(Request &req, Location &location)
 {
 	this->req = req;
-	// DEBUGGING STARTS
-	std::cout << "INITIALIZING ENV" << std::endl;
-	// DEBUGGING ENDS
 	std::string extension;
 	std::string ext_path;
 
@@ -100,9 +97,6 @@ void Cgi::initEnv(Request &req, Location &location)
 	if (req.getMethodStr() == "POST")
 	{
 		this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
-		// DEBUGGING STARTS
-		std::cout << "CONTENT_LENGTH: " << this->_env["CONTENT_LENGTH"] << std::endl;
-		// DEBUGGING ENDS
 		this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
 	}
 	this->_ch_env = (char **)calloc(sizeof(char *), this->_env.size() + 1);
@@ -118,17 +112,14 @@ void Cgi::initEnv(Request &req, Location &location)
 	this->_argv[2] = NULL;
 }
 
-/* Pipe and execute CGI */
-/* Pipe and execute CGI */
 void Cgi::execute(short &error_code)
 {
-	if (this->_argv[0] == NULL || this->_argv[1] == NULL)
+	if (_argv[0] == NULL || _argv[1] == NULL)
 	{
 		error_code = INTERNAL_SERVER_ERROR;
 		return;
 	}
 
-	// Use pipes to redirect stdin and stdout
 	int stdin_pipe[2];
 	int stdout_pipe[2];
 
@@ -139,48 +130,42 @@ void Cgi::execute(short &error_code)
 		return;
 	}
 
-	this->_cgi_pid = fork();
+	_cgi_pid = fork();
 
-	if (this->_cgi_pid == 0)
+	if (_cgi_pid == 0)
 	{
-		// Close the write end of the stdin pipe and the read end of the stdout pipe
+		// Child process
 		close(stdin_pipe[1]);
 		close(stdout_pipe[0]);
 
-		// Redirect stdin and stdout to the pipes
 		dup2(stdin_pipe[0], STDIN_FILENO);
 		dup2(stdout_pipe[1], STDOUT_FILENO);
 
-		// Execute the CGI script
-		this->_exit_status = execve(this->_argv[0], this->_argv, this->_ch_env);
+		_exit_status = execve(_argv[0], _argv, _ch_env);
 
 		std::cerr << "EXECVE FAILED" << std::endl;
-		exit(this->_exit_status);
+		exit(_exit_status);
 	}
-	else if (this->_cgi_pid > 0)
+	else if (_cgi_pid > 0)
 	{
-		// Close the read end of the stdin pipe and the write end of the stdout pipe
+		// Parent process
 		close(stdin_pipe[0]);
 		close(stdout_pipe[1]);
 
-		// Write the request body to the stdin of the CGI script
 		write(stdin_pipe[1], req.getBody().c_str(), req.getBody().length());
 		close(stdin_pipe[1]);
 
 		// Read the output from the stdout of the CGI script
 		char buffer[BUFSIZ];
 		ssize_t read_len;
-
 		filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
 		while ((read_len = read(stdout_pipe[0], buffer, BUFSIZ)) > 0)
 		{
-			write(filex, buffer, read_len); // Write to the file or stdout as needed
+			write(filex, buffer, read_len);
 		}
-
 		close(stdout_pipe[0]);
 
-		// Wait for the CGI script to complete
-		waitpid(this->_cgi_pid, &this->_exit_status, 0);
+		waitpid(_cgi_pid, &_exit_status, 0);
 		error_code = 200;
 	}
 	else
@@ -201,7 +186,6 @@ int Cgi::findStart(const std::string path, const std::string delim)
 		return (-1);
 }
 
-/* Translation of parameters for QUERY_STRING environment variable */
 std::string Cgi::decode(std::string &path)
 {
 	size_t token = path.find("%");
@@ -214,29 +198,6 @@ std::string Cgi::decode(std::string &path)
 		token = path.find("%");
 	}
 	return (path);
-}
-
-/* Isolation PATH_INFO environment variable */
-std::string Cgi::getPathInfo(std::string &path, std::vector<std::string> extensions)
-{
-	std::string tmp;
-	size_t start, end;
-
-	for (std::vector<std::string>::iterator it_ext = extensions.begin(); it_ext != extensions.end(); it_ext++)
-	{
-		start = path.find(*it_ext);
-		if (start != std::string::npos)
-			break;
-	}
-	if (start == std::string::npos)
-		return "";
-	if (start + 3 >= path.size())
-		return "";
-	tmp = path.substr(start + 3, path.size());
-	if (!tmp[0] || tmp[0] != '/')
-		return "";
-	end = tmp.find("?");
-	return (end == std::string::npos ? tmp : tmp.substr(0, end));
 }
 
 void Cgi::clear()
@@ -258,13 +219,12 @@ std::string Cgi::getResponse()
 	if (file.is_open())
 	{
 		std::string line;
-		while (getline(file, line))
-		{
+		while (getline(file, line, '\0'))
 			response += line;
-		}
 		file.close();
 	}
 	else if (!file.good())
-		std::cout << "Unable to open CGI file" << std::endl;
+		std::cerr << "Unable to open CGI file" << std::endl;
+	response += "\0";
 	return (response);
 }

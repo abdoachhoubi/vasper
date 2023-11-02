@@ -51,7 +51,6 @@ public:
 	std::string generateErrorResponse(error_pages code, Server server);
 	int checkRedirection(std::vector<Location> loc, std::vector<std::string> sub_uris, std::string loc_path);
 	int router(std::vector<Location> loc, std::vector<std::string> sub_uris);
-	void printRequest();
 
 	// Controllers
 	int getController(Location location);

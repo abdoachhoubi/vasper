@@ -1,30 +1,62 @@
 #!/usr/bin/env python
-
 import cgi
-import cgitb
+import os
 
-# Enable CGI script error handling
-cgitb.enable()
+def save_uploaded_file(file_item):
+    upload_dir = '/home/astro/Desktop/vasper/data/cgi/uploads/'  # Set the directory where you want to store uploaded files
 
-# Get the uploaded file
-form = cgi.FieldStorage()
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
 
-# print the form to stderr
+    file_name = os.path.basename(file_item.filename)
+    target_path = os.path.join(upload_dir, file_name)
 
+    with open(target_path, 'wb') as new_file:
+        while True:
+            chunk = file_item.file.read(8192)
+            if not chunk:
+                break
+            new_file.write(chunk)
 
-file_item = form['file']
+    return file_name
 
-if file_item:
-	# Set the destination path for storing the uploaded file
-	upload_path = '/home/astro/Desktop/vasper/data/cgi/uploads/'  # Replace with your desired path
+def main():
+    form = cgi.FieldStorage()
 
-	# Save the uploaded file
-	with open(upload_path + file_item.filename, 'wb') as f:
-		f.write(file_item.file.read())
+    if "uploaded_file" in form:
+        file_item = form["uploaded_file"]
+        
+        if file_item.filename:
+            try:
+                file_name = save_uploaded_file(file_item)
+                print("\r\nContent-Type: text/html\r\n\r\n")
+                print("File uploaded successfully!<br>")
+                print("File Name: " + file_name + "<br>")
+                print("File Size: " + str(os.path.getsize('/home/astro/Desktop/vasper/data/cgi/uploads/' + file_name)) + " bytes<br>")
+            except Exception as e:
+                print("\r\nContent-Type: text/html\r\n\r\n")
+                print("Error uploading the file.<br>")
+        else:
+            print("\r\nContent-Type: text/html\r\n\r\n")
+            print("File upload error.<br>")
+    else:
+        print("\r\nContent-Type: text/html\r\n\r\n")
+        print("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>File Upload Form</title>
+        </head>
+        <body>
+            <h1>Upload a File</h1>
+            <form action="" method="post" enctype="multipart/form-data">
+                <label for="uploaded_file">Select a file:</label>
+                <input type="file" name="uploaded_file" id="uploaded_file">
+                <input type="submit" value="Upload">
+            </form>
+        </body>
+        </html>
+        """)
 
-	print("Content-Type: text/html\n")
-	print("File uploaded successfully.")
-else:
-	print("Content-Type: text/html\n")
-	print("No file uploaded.")
-
+if __name__ == "__main__":
+    main()
