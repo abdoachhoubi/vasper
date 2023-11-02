@@ -2,11 +2,11 @@
 
 Location::~Location() {}
 
-Location::Location(const Location &other) {*this = other;}
+Location::Location(const Location &other) { *this = other; }
 
-std::vector<std::string> Location::getAllowedMethods() const {return (allowed_methods);}
+std::vector<std::string> Location::getAllowedMethods() const { return (allowed_methods); }
 
-void Location::setAllowedMethods(std::vector<std::string> methods) {allowed_methods = methods;}
+void Location::setAllowedMethods(std::vector<std::string> methods) { allowed_methods = methods; }
 
 void Location::setRootLocation(std::string parametr) { root = parametr; }
 
@@ -38,7 +38,7 @@ const std::vector<std::string> &Location::getCgiPath() const { return (cgi_path)
 
 const std::vector<std::string> &Location::getCgiExtension() const { return (cgi_extension); }
 
-const std::map<std::string, std::string> &Location::getExtensionPath() const {return (this->_ext_path);}
+const std::map<std::string, std::string> &Location::getExtensionPath() const { return (this->_ext_path); }
 
 const unsigned long &Location::getMaxBodySize() const { return (clientMaxBodySize); }
 
@@ -57,6 +57,7 @@ Location::Location()
 	cgi_extension = std::vector<std::string>();
 	clientMaxBodySize = MAX_CONTENT_LENGTH;
 	_ext_path = std::map<std::string, std::string>();
+	cgi = false;
 }
 
 Location &Location::operator=(const Location &other)
