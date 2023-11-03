@@ -787,7 +787,6 @@ int Response::getCgiState()
 int Response::checkCGIStatus()
 {
 	int status;
-	// std::cout << RED_BOLD << "parent check uuuu" << this->_cgi_obj.getCgiPid() << RESET << std::endl;
 	int w = waitpid(this->_cgi_obj.getCgiPid(), &status, WNOHANG);
 	if (w == -1)
 	{
