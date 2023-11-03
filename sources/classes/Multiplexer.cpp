@@ -105,6 +105,11 @@ void Multiplexer::buildTheResponse(Client &client)
 	}
 	else
 	{
+		if (client.response._cgi_running)
+		{
+			client.response.handleCgi(Location());
+			return;
+		}
 		char buffer[BUFFER_SIZE];
 		memset(buffer, 0, sizeof(buffer));
 		if (client.isFileOpened == false)
@@ -126,9 +131,14 @@ void Multiplexer::sendResponse(const int &i, Client &client)
 	std::string response;
 	if (client._rem == false)
 		buildTheResponse(client);
+	std::cout << GREEN_BOLD << "Sending response to client " << client.response._response.size() << std::endl;
+	// exit(0);
 	ssize_t result = write(i, client.response._response.c_str(), client.response._response.size());
+	if (!client.response._cgi_state)
+		return;
 	if (client.flag == true)
 		client.bytes_sent += result;
+	std::cout << RED_BOLD << client.response._cgi_state << RESET << std::endl;
 	if (result == -1)
 		closeConnection(i);
 	else if (result != (ssize_t)client.response._response.size())

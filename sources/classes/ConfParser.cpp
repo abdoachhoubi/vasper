@@ -160,8 +160,8 @@ void ConfParser::createServer(std::string &config, Server &server)
 				throw std::runtime_error("Error: Server config file is not well formated 9");
 		}
 	}
-	if (Server::isReadableAndExist(server.getUploadPath(), "") < 0)
-		throw std::runtime_error("Error: upload folder not exist 2");
+	// if (Server::isReadableAndExist(server.getUploadPath(), "") < 0)
+	// 	throw std::runtime_error("Error: upload folder not exist 2");
 	if (!server.checkLocations())
 		throw std::runtime_error("Error: in Location from config file");
 	// if (!server.isValidErrorPages())

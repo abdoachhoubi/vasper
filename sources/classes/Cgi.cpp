@@ -112,6 +112,7 @@ void Cgi::initEnv(Request &req, Location &location)
 	this->_argv[2] = NULL;
 }
 
+
 void Cgi::execute(short &error_code)
 {
 	if (this->_argv[0] == NULL || this->_argv[1] == NULL)
@@ -120,10 +121,15 @@ void Cgi::execute(short &error_code)
 		return;
 	}
 
-	int stdin_pipe[2];
-	int stdout_pipe[2];
+	// int test = open("./test.txt", O_CREAT | O_TRUNC | O_RDWR, 0777);
+	// int stdout_pipe[2];
 
-	if (pipe(stdin_pipe) == -1 || pipe(stdout_pipe) == -1)
+	// write(test, req.getBody().c_str(), req.getBody().length());
+	// close(test);
+	// if(req.getMethodStr() == "POST")
+	// 	test = open("./test.txt", O_CREAT | O_TRUNC | O_RDWR, 0777);
+	
+	if (pipe(this->fds) == -1)
 	{
 		std::cerr << RED_BOLD << "pipe() failed" << RESET << std::endl;
 		error_code = INTERNAL_SERVER_ERROR;
@@ -134,13 +140,13 @@ void Cgi::execute(short &error_code)
 
 	if (this->_cgi_pid == 0)
 	{
-		// Close the write end of the stdin pipe and the read end of the stdout pipe
-		close(stdin_pipe[1]);
-		close(stdout_pipe[0]);
-
+	// Close the write end of the stdin pipe and the read end of the stdout pipe
+		close(this->fds[0]);
 		// Redirect stdin and stdout to the pipes
-		dup2(stdin_pipe[0], STDIN_FILENO);
-		dup2(stdout_pipe[1], STDOUT_FILENO);
+		// dup2(test, STDIN_FILENO);
+		// close(test);
+		dup2(this->fds[1], STDOUT_FILENO);
+		close(this->fds[1]);
 
 		// Execute the CGI script
 		this->_exit_status = execve(this->_argv[0], this->_argv, this->_ch_env);
@@ -148,56 +154,30 @@ void Cgi::execute(short &error_code)
 	}
 	else if (this->_cgi_pid > 0)
 	{
-		waitpid(this->_cgi_pid, &this->_exit_status, WNOHANG);
-		if (WIFEXITED(this->_exit_status) != 0)
-		{
-			this->_exit_status = WEXITSTATUS(this->_exit_status);
-			std::cerr << "WIEXITED" << std::endl;
-			kill(this->_cgi_pid, SIGKILL);
-			error_code = 502;
-			return;
-		}
-		else
-		{
-			this->_exit_status = 1;
-			std::cerr << "NOT WIEXITED" << std::endl;
-		}
+			std::cout << RED_BOLD << "parent check" << this->_cgi_pid << RESET<< std::endl;
 
+		// waitpid(this->_cgi_pid, &this->_exit_status, WNOHANG);
+		std::cout << "testing " << std::endl;
+		
+		// if(req.getMethodStr() == "POST")
+		// 	close(test);
 		// Close the read end of the stdin pipe and the write end of the stdout pipe
-		close(stdin_pipe[0]);
-		close(stdout_pipe[1]);
+		close(this->fds[1]);
 
-		// Write the request body to the stdin of the CGI script
-		write(stdin_pipe[1], req.getBody().c_str(), req.getBody().length());
-		close(stdin_pipe[1]);
+		// TAG Write the request body to the stdin of the CGI script
 
-		// Read the output from the stdout of the CGI script
-		char buffer[BUFSIZ];
-		ssize_t read_len;
-
-		filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
-		while ((read_len = read(stdout_pipe[0], buffer, BUFSIZ)) > 0)
-		{
-			int x = write(filex, buffer, read_len); // Write to the file or stdout as needed
-			if (x == -1)
-			{
-				std::cout << "Error writing to file" << std::endl;
-				error_code = INTERNAL_SERVER_ERROR;
-				return;
-			}
-		}
-		close(stdout_pipe[0]);
+		// TAG: Read the output from the stdout of the CGI script
 		// Wait for the CGI script to complete
 
-		if (_exit_status != 0)
-		{
-			std::cerr << "CGI script returned non-zero exit status" << std::endl;
-			error_code = INTERNAL_SERVER_ERROR;
-			return;
-		}
-		error_code = 200;
+		// if (_exit_status != 0)
+		// {
+		// 	std::cerr << "CGI script returned non-zero exit status" << std::endl;
+		// 	error_code = INTERNAL_SERVER_ERROR;
+		// 	return;
+		// }
+		// error_code = 200;
 	}
-	else
+	else if (this->_cgi_pid < 0)
 	{
 		std::cout << "Fork failed" << std::endl;
 		error_code = INTERNAL_SERVER_ERROR;

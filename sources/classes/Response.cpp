@@ -6,12 +6,14 @@ Response::Response()
 {
 	statusCode = SUCCESS;
 	_cgi_state = 0;
+	_cgi_running = 0;
 };
 Response::Response(Request &req, Server server) : _req(req), _server_conf(server)
 {
 	contentType = getContentTypeFromExtension(req.getPath());
 	statusCode = SUCCESS;
 	_cgi_state = 0;
+	_cgi_running = 0;
 }
 void Response::setServer(Server server) { _server_conf = server; }
 void Response::setRequest(Request req) { _req = req; }
@@ -781,52 +783,116 @@ int Response::getCgiState()
 	return (_cgi_state);
 }
 
+// int Response::checkCGIStatus(std::map<int, std::string> &errorPages)
+int Response::checkCGIStatus()
+{
+	int status;
+	// std::cout << RED_BOLD << "parent check uuuu" << this->_cgi_obj.getCgiPid() << RESET << std::endl;
+	int w = waitpid(this->_cgi_obj.getCgiPid(), &status, WNOHANG);
+	if (w == -1)
+	{
+		std::cout << "Error waiting for CGI" << std::endl;
+		// this->setStatus(500);
+		// this->serveErrorPage(errorPages);
+	}
+	else if (w == 0)
+	{
+		std::cout << "CGI still running" << std::endl;
+		return false;
+	}
+	else
+	{
+		std::cout << "CGI finished" << std::endl;
+		if (WIFEXITED(status))
+		{
+			std::cout << "CGI exited normally" << std::endl;
+			return true;
+		}
+		else
+		{
+			std::cout << "CGI exited abnormally" << std::endl;
+			// this->setStatus(500);
+			// this->serveErrorPage(errorPages);
+			return true;
+		}
+	}
+	return true;
+}
+
 /* check a file for CGI (the extension is supported, the file exists and is executable) and run the CGI */
 int Response::handleCgi(Location location)
 {
-	std::string path;
-	size_t pos;
+	if (!_cgi_running)
+	{
+		_cgi_running = true;
+		std::string path;
+		size_t pos;
 
-	path = this->_req.getPath();
-	if (path[0] && path[0] == '/')
-		path.erase(0, 1);
+		path = this->_req.getPath();
+		if (path[0] && path[0] == '/')
+			path.erase(0, 1);
 
-	path = _path;
-	pos = path.find(".");
-	if (pos == std::string::npos)
-	{
-		statusCode = NOT_IMPLEMENTED;
-		return (1);
+		path = _path;
+		pos = path.find(".");
+		if (pos == std::string::npos)
+		{
+			statusCode = NOT_IMPLEMENTED;
+			return (1);
+		}
+		if (ConfParser::getTypePath(path) != 1)
+		{
+			statusCode = NOT_FOUND;
+			set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
+			return (1);
+		}
+		_cgi_obj.clear();
+		_cgi_obj.setCgiPath(path);
+		_cgi_obj.initEnv(_req, location);
+	
+		_cgi_obj.execute(statusCode);
+		// _cgi_state = checkCGIStatus();
+		return 0;
 	}
-	if (ConfParser::getTypePath(path) != 1)
+	_cgi_state = checkCGIStatus();
+	if (_cgi_state)
 	{
-		statusCode = NOT_FOUND;
-		set_headers(generateErrorResponse(NOT_FOUND, _server_conf));
-		return (1);
+		char buffer[BUFSIZ];
+		ssize_t read_len;
+
+		int filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
+		while ((read_len = read(this->_cgi_obj.fds[0], buffer, BUFSIZ)) > 0)
+		{
+			int x = write(filex, buffer, read_len); // Write to the file or stdout as needed
+
+			if (x == -1)
+			{
+				std::cout << "Error writing to file" << std::endl;
+				exit(65);
+				// error_code = INTERNAL_SERVER_ERROR;
+				// return;
+			}
+		}
+		close(this->_cgi_obj.fds[0]);
+		if (statusCode != 200)
+			return (1);
+		_response = _cgi_obj.getResponse(statusCode);
+		if (statusCode != 200)
+			return (1);
+		if (_response.find("\r\n\r\n") != std::string::npos)
+		{
+			_headers = _response.substr(0, _response.find("\r\n\r\n"));
+			_response = _response.substr(_response.find("\r\n\r\n") + 4);
+		}
+		else
+			_headers = "Content-Type: text/html;";
+		// check if headers has a status code
+		if (_headers.find("Status:") != std::string::npos)
+			statusCode = atoi(_headers.substr(_headers.find("Status:") + 7, 4).c_str());
+		else
+			statusCode = SUCCESS;
+		std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode);
+		_response = res + _headers + "\r\n" + "Content-Length: " + to_string(_response.size()) + "\r\n\r\n" + _response;
+		remove("./vasper.cgi");
 	}
-	_cgi_obj.clear();
-	_cgi_obj.setCgiPath(path);
-	_cgi_obj.initEnv(_req, location);
-	_cgi_obj.execute(statusCode);
-	if (statusCode != 200)
-		return (1);
-	_response = _cgi_obj.getResponse(statusCode);
-	if (statusCode != 200)
-		return (1);
-	if (_response.find("\r\n\r\n") != std::string::npos)
-	{
-		_headers = _response.substr(0, _response.find("\r\n\r\n"));
-		_response = _response.substr(_response.find("\r\n\r\n") + 4);
-	}
-	else
-		_headers = "Content-Type: text/html;";
-	// check if headers has a status code
-	if (_headers.find("Status:") != std::string::npos)
-		statusCode = atoi(_headers.substr(_headers.find("Status:") + 7, 4).c_str());
-	else
-		statusCode = SUCCESS;
-	std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode);
-	_response = res + _headers + "\r\n" + "Content-Length: " + to_string(_response.size()) + "\r\n\r\n" + _response;
-	remove("./vasper.cgi");
 	return (0);
 }

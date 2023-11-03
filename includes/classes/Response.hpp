@@ -15,6 +15,8 @@ public:
 	// Constructors
 	Response(Request &req, Server server);
 	Response();
+	int handleCgi(Location location);
+
 	void set_headers(std::string headers);
 	bool isResourceFound(const std::string &fullPath);
 	std::string generateResponse(std::string fullPath, int flag, Location location);
@@ -61,10 +63,12 @@ public:
 	void setCgiState(int);
 
 	Cgi _cgi_obj;
-	int	_cgi_state;
+	int	_cgi_running;
+	int _cgi_state;
 
 	void setRequest(Request req);
 	void cut_response(size_t i);
+	int checkCGIStatus();
 	std::string get_headers();
 	std::string _response;
 	std::streampos fileSize;
@@ -85,5 +89,4 @@ private:
 
 	int _cgi_fd[2];
 
-	int handleCgi(Location location);
 };

@@ -39,6 +39,7 @@ Client::Client(Server &server)
 
 void Client::buildResponse()
 {
+	
 	response.setRequest(this->request);
 	response.respond();
 }

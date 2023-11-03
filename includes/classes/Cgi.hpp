@@ -7,7 +7,7 @@ class Location;
 
 class Cgi
 {
-private:
+public:
 	std::map<std::string, std::string> _env;
 	char **_ch_env;
 	char **_argv;
@@ -15,6 +15,7 @@ private:
 	std::string _cgi_path;
 	pid_t _cgi_pid;
 	Request req;
+	int fds[2];
 
 public:
 	int filex;
