@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# infinit loop
+# infinit loop printing hi
 while true; do
-echo "Hello World"
+	echo hi
 done

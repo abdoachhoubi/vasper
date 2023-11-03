@@ -61,6 +61,7 @@ public:
 	void setCgiState(int);
 
 	Cgi _cgi_obj;
+	int	_cgi_state;
 
 	void setRequest(Request req);
 	void cut_response(size_t i);
@@ -82,7 +83,6 @@ private:
 	std::string body;
 	std::map<std::string, std::string> headers;
 
-	short _cgi_state;
 	int _cgi_fd[2];
 
 	int handleCgi(Location location);

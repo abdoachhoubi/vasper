@@ -144,12 +144,25 @@ void Cgi::execute(short &error_code)
 
 		// Execute the CGI script
 		this->_exit_status = execve(this->_argv[0], this->_argv, this->_ch_env);
-
-		std::cerr << "EXECVE FAILED" << std::endl;
 		exit(this->_exit_status);
 	}
 	else if (this->_cgi_pid > 0)
 	{
+		waitpid(this->_cgi_pid, &this->_exit_status, WNOHANG);
+		if (WIFEXITED(this->_exit_status) != 0)
+		{
+			this->_exit_status = WEXITSTATUS(this->_exit_status);
+			std::cerr << "WIEXITED" << std::endl;
+			kill(this->_cgi_pid, SIGKILL);
+			error_code = 502;
+			return;
+		}
+		else
+		{
+			this->_exit_status = 1;
+			std::cerr << "NOT WIEXITED" << std::endl;
+		}
+
 		// Close the read end of the stdin pipe and the write end of the stdout pipe
 		close(stdin_pipe[0]);
 		close(stdout_pipe[1]);
@@ -165,13 +178,23 @@ void Cgi::execute(short &error_code)
 		filex = open("./vasper.cgi", O_CREAT | O_TRUNC | O_RDWR, 0777);
 		while ((read_len = read(stdout_pipe[0], buffer, BUFSIZ)) > 0)
 		{
-			write(filex, buffer, read_len); // Write to the file or stdout as needed
+			int x = write(filex, buffer, read_len); // Write to the file or stdout as needed
+			if (x == -1)
+			{
+				std::cout << "Error writing to file" << std::endl;
+				error_code = INTERNAL_SERVER_ERROR;
+				return;
+			}
 		}
-
 		close(stdout_pipe[0]);
-
 		// Wait for the CGI script to complete
-		waitpid(this->_cgi_pid, &this->_exit_status, 0);
+
+		if (_exit_status != 0)
+		{
+			std::cerr << "CGI script returned non-zero exit status" << std::endl;
+			error_code = INTERNAL_SERVER_ERROR;
+			return;
+		}
 		error_code = 200;
 	}
 	else
@@ -217,7 +240,7 @@ void Cgi::clear()
 	this->_env.clear();
 }
 
-std::string Cgi::getResponse()
+std::string Cgi::getResponse(short &status_code)
 {
 	std::string response;
 
@@ -234,7 +257,12 @@ std::string Cgi::getResponse()
 		file.close();
 	}
 	else if (!file.good())
+	{
 		std::cout << "Unable to open CGI file" << std::endl;
+		status_code = INTERNAL_SERVER_ERROR;
+		return ("");
+	}
+	status_code = 200;
 	response += "\0";
 	return (response);
 }

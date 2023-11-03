@@ -38,5 +38,5 @@ public:
 	int findStart(const std::string path, const std::string delim);
 	std::string decode(std::string &path);
 
-	std::string getResponse();
+	std::string getResponse(short &status_code);
 };

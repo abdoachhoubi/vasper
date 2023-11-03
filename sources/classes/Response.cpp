@@ -274,13 +274,19 @@ int Response::getController(Location location)
 		{
 			if (((exts[i] == "*." + file_extension) || (exts[i] == "." + file_extension)) && location.getCGI())
 			{
-				_cgi_state = 1;
-				handleCgi(location);
-				// std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode) + "\r\n";
+				// TAG: CALLING CGI LOGGER
+				std::cerr << GREEN_BOLD << "CGI HANDLER IS RUNNING" << RESET << std::endl;
+				if (handleCgi(location) != 0)
+				{
+					set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
+					// TAG: CALLING CGI LOGGER
+					std::cerr << GREEN_BOLD << "CGI HANDLER ENCOUNTERED AN ERROR" << RESET << std::endl;
+					return 0;
+				}
+				// TAG: CALLING CGI LOGGER
+				std::cerr << GREEN_BOLD << "CGI HANDLER FINISHED SUCCESSFULLY" << RESET << std::endl;
 				std::string res = "";
-				// res += "Content-Type: text/html\r\n";
-				// res += "Content-Length: " + to_string(_response.length()) + "\r\n";
-				// res += "\r\n";
+
 				res += _response;
 				set_headers(res);
 				return 0;
@@ -360,8 +366,17 @@ int Response::postController(Location location)
 	{
 		if (((exts[i] == "*." + file_extension) || (exts[i] == "." + file_extension)) && location.getCGI())
 		{
-			_cgi_state = 1;
-			handleCgi(location);
+			// TAG: CALLING CGI LOGGER
+			std::cerr << GREEN_BOLD << "CGI HANDLER IS RUNNING" << RESET << std::endl;
+			if (handleCgi(location) != 0)
+			{
+				set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
+				// TAG: CALLING CGI LOGGER
+				std::cerr << GREEN_BOLD << "CGI HANDLER ENCOUNTERED AN ERROR" << RESET << std::endl;
+				return 0;
+			}
+			// TAG: CALLING CGI LOGGER
+			std::cerr << GREEN_BOLD << "CGI HANDLER FINISHED SUCCESSFULLY" << RESET << std::endl;
 			std::string res = "";
 			res += _response;
 			set_headers(res);
@@ -791,37 +806,25 @@ int Response::handleCgi(Location location)
 	}
 	_cgi_obj.clear();
 	_cgi_obj.setCgiPath(path);
-	_cgi_state = 1;
-	if (pipe(_cgi_fd) < 0)
-	{
-		statusCode = INTERNAL_SERVER_ERROR;
-		set_headers(generateErrorResponse(INTERNAL_SERVER_ERROR, _server_conf));
-		return (1);
-	}
-	_cgi_obj.initEnv(_req, location); // + URI
+	_cgi_obj.initEnv(_req, location);
 	_cgi_obj.execute(statusCode);
-	_response = _cgi_obj.getResponse();
-	// check if response has some headers (Content-Length, Content-Type, etc)
+	if (statusCode != 200)
+		return (1);
+	_response = _cgi_obj.getResponse(statusCode);
+	if (statusCode != 200)
+		return (1);
 	if (_response.find("\r\n\r\n") != std::string::npos)
 	{
 		_headers = _response.substr(0, _response.find("\r\n\r\n"));
 		_response = _response.substr(_response.find("\r\n\r\n") + 4);
 	}
 	else
-	{
 		_headers = "Content-Type: text/html;";
-	}
 	// check if headers has a status code
 	if (_headers.find("Status:") != std::string::npos)
-	{
 		statusCode = atoi(_headers.substr(_headers.find("Status:") + 7, 4).c_str());
-		// _headers = _headers.substr(0, _headers.find("Status:"));
-	}
 	else
-	{
 		statusCode = SUCCESS;
-	}
-
 	std::string res = "HTTP/1.1 " + to_string(statusCode) + " " + statusTextGen(statusCode);
 	_response = res + _headers + "\r\n" + "Content-Length: " + to_string(_response.size()) + "\r\n\r\n" + _response;
 	remove("./vasper.cgi");
