@@ -3,7 +3,6 @@
 ConfParser::ConfParser() : nbr_serv(0) {}
 ConfParser::~ConfParser() {}
 std::vector<Server> ConfParser::getServers() {return servers;}
-int ConfParser::checkFile(std::string const path, int mode) {return (access(path.c_str(), mode));}
 
 void ConfParser::parse(const std::string &config_file)
 {
@@ -161,7 +160,7 @@ void ConfParser::createServer(std::string &config, Server &server)
 				throw std::runtime_error("Error: Server config file is not well formated 9");
 		}
 	}
-	if (Server::isReadableAndExist(server.getRoot(), server.getUploadPath()) < 0)
+	if (Server::isReadableAndExist(server.getUploadPath(), "") < 0)
 		throw std::runtime_error("Error: upload folder not exist 2");
 	if (!server.checkLocations())
 		throw std::runtime_error("Error: in Location from config file");

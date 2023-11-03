@@ -64,12 +64,10 @@ public:
 	void setUploadPath(std::string uploadPath);
 	std::string &getUploadPath();
 
-	const std::string &getPathErrorPage(error_pages key);
-	const std::vector<Location>::iterator getLocationKey(std::string key);
+
 	int isValidLocation(Location &location) const;
 	static void checkToken(std::string &parametr);
 	bool checkLocations() const;
-	// bool isValidErrorPages();
 	static int checkTypePath(std::string const path);
 	static int accessFile(std::string const path, int mode);
 	static std::string fileToString(std::string path);

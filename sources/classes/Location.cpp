@@ -16,7 +16,6 @@ void Location::setIndexLocation(std::string parametr) { index = parametr; }
 
 void Location::setReturn(std::string parametr) { _return = parametr; }
 
-void Location::setAlias(std::string parametr) { _alias = parametr; }
 
 void Location::setCgiExtension(std::vector<std::string> extension) { cgi_extension = extension; }
 
@@ -28,8 +27,6 @@ const std::string &Location::getIndexLocation() const { return (index); }
 
 const std::string &Location::getReturn() const { return (_return); }
 
-const std::string &Location::getAlias() const { return (_alias); }
-
 const bool &Location::getAutoindex() const { return (autoindex); }
 
 const std::vector<bool> &Location::getMethods() const { return (_methods); }
@@ -39,8 +36,6 @@ const std::vector<std::string> &Location::getCgiPath() const { return (cgi_path)
 const std::vector<std::string> &Location::getCgiExtension() const { return (cgi_extension); }
 
 const std::map<std::string, std::string> &Location::getExtensionPath() const { return (this->_ext_path); }
-
-const unsigned long &Location::getMaxBodySize() const { return (clientMaxBodySize); }
 
 bool Location::getCGI() const { return (this->cgi); }
 
@@ -118,12 +113,6 @@ void Location::setCgiPath(std::vector<std::string> path)
 			throw std::runtime_error("Error: invalid cgi_path");
 	}
 	cgi_path = path;
-}
-
-void Location::setMaxBodySize(std::string parametr)
-{
-	std::istringstream iss(parametr);
-	iss >> clientMaxBodySize;
 }
 
 void Location::setCGI(std::string parametr)

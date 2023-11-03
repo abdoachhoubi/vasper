@@ -23,5 +23,4 @@ class ConfParser {
 		void					createServer(std::string &config, Server &server);
 
 		static int getTypePath(std::string const path);
-		static int checkFile(std::string const path, int mode);
 };

@@ -28,9 +28,6 @@ class Location
 		void setReturn(std::string parametr);
 		const std::string &getReturn() const;
 
-		void setAlias(std::string parametr);
-		const std::string &getAlias() const;
-
 		void setCgiPath(std::vector<std::string> path);
 		const std::vector<std::string> &getCgiPath() const;
 
@@ -39,8 +36,6 @@ class Location
 
 		const std::map<std::string, std::string> &getExtensionPath() const;
 
-		void setMaxBodySize(std::string parametr);
-		const unsigned long &getMaxBodySize() const;
 
 
 		void setAllowedMethods(std::vector<std::string> methods);

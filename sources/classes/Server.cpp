@@ -33,22 +33,10 @@ const std::vector<Location> &Server::getLocations() { return locations; }
 const std::string &Server::getRoot() { return _root; }
 const std::string &Server::getIndex() { return _index; }
 const bool &Server::getAutoindex() { return autoindex; }
-const std::string &Server::getPathErrorPage(error_pages key) { return _errorPages[key]; }
 int Server::getFd() { return listenFd; }
 void Server::setRoot(std::string root) { this->_root = root; }
 std::string &Server::getUploadPath() { return _uploadPath; }
 const std::map<error_pages, std::string> &Server::getErrorPages() { return _errorPages; }
-const std::vector<Location>::iterator Server::getLocationKey(std::string key)
-{
-	std::vector<Location>::iterator it = locations.begin();
-	std::vector<Location>::iterator ite = locations.end();
-	for (; it != ite; ++it)
-	{
-		if (it->getPath() == key)
-			return it;
-	}
-	return it;
-}
 
 // TAG: SETTERS
 void Server::setFd(int fd) { listenFd = fd; }
@@ -125,16 +113,12 @@ void Server::setLocation(std::string nameLocation, std::vector<std::string> para
 				location.setIndexLocation(value[0]);
 			else if (key == "return")
 				location.setReturn(value[0]);
-			else if (key == "alias")
-				location.setAlias(value[0]);
 			else if (key == "cgi")
 				location.setCGI(value[0]);
 			else if (key == "cgi_path")
 				location.setCgiPath(value);
 			else if (key == "cgi_extension")
 				location.setCgiExtension(value);
-			else if (key == "max_body_size")
-				location.setMaxBodySize(value[0]);
 		}
 	}
 	location.setPath(nameLocation);
@@ -149,19 +133,6 @@ void Server::setAutoindex(std::string autoindex)
 	else
 		throw std::runtime_error("Error: invalid autoindex");
 }
-
-// TAG: Checks if all error pages are valid
-// bool Server::isValidErrorPages()
-// {
-// 	std::map<error_pages, std::string>::iterator it = _errorPages.begin();
-// 	std::map<error_pages, std::string>::iterator ite = _errorPages.end();
-// 	for (; it != ite; ++it)
-// 	{
-// 		if (Server::accessFile(it->second, F_OK) < 0 || Server::accessFile(it->second, R_OK) < 0)
-// 			return false;
-// 	}
-// 	return true;
-// }
 
 // TAG: Check if location is valid when it comes to CGI params
 int Server::isValidLocation(Location &location) const
